@@ -40,6 +40,7 @@ public class VendingLogic implements CoinSlotListener, DisplayListener{
 		vend.getDisplay().register(this);
 		credit = 0;
 		timer = new Timer();
+		coordinateDisplay();
 	}
 
 	
@@ -50,9 +51,10 @@ public class VendingLogic implements CoinSlotListener, DisplayListener{
 	public void coordinateDisplay() {
 		if (credit == 0) {
 			timerCycles = 0;
-			timer.schedule(timerResponder, 5000);
+			timer.schedule(timerResponder, 0, 5000);
 		}
 		else {
+			timer.cancel();
 			displayWithCredit();
 		}
 		
@@ -85,7 +87,6 @@ public class VendingLogic implements CoinSlotListener, DisplayListener{
 			}
 			else if ((timerCycles % 3) == 1) {
 				vend.getDisplay().display("");
-				timerCycles++;
 			}
 			else if ((timerCycles % 3) == 2) {
 				timerCycles = 0;
@@ -143,10 +144,8 @@ public class VendingLogic implements CoinSlotListener, DisplayListener{
 	public void messageChange(Display display, String oldMessage, String newMessage) {
 		// TODO Auto-generated method stub
 		//System.out.println(oldMessage);
-		//System.out.println(newMessage);
+		//System.out.println("Message change: " + newMessage);
 		displayMessage = newMessage;
-		
 	}
-	
 	
 } // end class
