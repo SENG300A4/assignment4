@@ -20,12 +20,13 @@ import java.awt.event.ActionListener;
 import java.util.Timer;
 import java.util.TimerTask;
 
-public class VendingLogic {
+public class VendingLogic implements CoinSlotListener, DisplayListener{
 
 	private VendingMachine vend;
 	private int credit;
 	private Timer timer;
 	private int timerCycles;
+	private String displayMessage;
 	
 	/**
 	 * The main constructor. Will register itself as listener for
@@ -35,10 +36,12 @@ public class VendingLogic {
 	public VendingLogic(VendingMachine vending) {
 		vend = vending;
 		// Register as listener with relevant components
-		
+		vend.getCoinSlot().register(this);
+		vend.getDisplay().register(this);
 		credit = 0;
 		timer = new Timer();
 	}
+
 	
 	/**
 	 * Method to handle what the display should be displaying.
@@ -90,5 +93,60 @@ public class VendingLogic {
 			
 		}
 	};
+
+	@Override
+	public void enabled(AbstractHardware<? extends AbstractHardwareListener> hardware) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void disabled(AbstractHardware<? extends AbstractHardwareListener> hardware) {
+		// TODO Auto-generated method stub
+		
+	}
+	
+	/**
+	 * Method to listen to the Coin slot events
+	 */
+	@Override
+	public void validCoinInserted(CoinSlot slot, Coin coin) {
+		
+		// TODO Auto-generated method stub
+		//System.out.println("added coin");
+		credit+=coin.getValue();
+		coordinateDisplay();
+		
+	}
+
+	@Override
+	public void coinRejected(CoinSlot slot, Coin coin) {
+		// TODO Auto-generated method stub
+		
+	}
+	
+	/**
+	 * Getter for the current display message
+	 */
+	public String getDisplayMessage() {
+		return displayMessage;
+	}
+	
+	
+	/**
+	 * Method to listen to changes in display messages
+	 * @param display - the device on which the event occurred 
+	 * @param oldMessage - previous message displayed
+	 * @param newMessage - new message to display
+	 */
+	@Override
+	public void messageChange(Display display, String oldMessage, String newMessage) {
+		// TODO Auto-generated method stub
+		//System.out.println(oldMessage);
+		//System.out.println(newMessage);
+		displayMessage = newMessage;
+		
+	}
+	
 	
 } // end class
