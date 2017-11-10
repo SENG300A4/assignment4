@@ -51,7 +51,12 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 		timer = new Timer();
 		if (credit == 0) {
 			timerCycles = 0;
-			timer.schedule(timerResponder, 0, 5000);
+			try {
+				timer.schedule(timerResponder, 0, 5000);
+			}
+			catch (IllegalStateException e) {
+				
+			};
 		}
 		else {
 			if (timer != null) {
@@ -155,7 +160,7 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 	public void messageChange(Display display, String oldMessage, String newMessage) {
 		// TODO Auto-generated method stub
 		//System.out.println(oldMessage);
-		System.out.println("Message change: " + newMessage);
+		//System.out.println("Message change: " + newMessage);
 		displayMessage = newMessage;
 	}
 
