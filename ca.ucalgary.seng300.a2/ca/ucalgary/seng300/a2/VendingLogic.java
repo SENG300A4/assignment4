@@ -40,22 +40,24 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 		vend.getDisplay().register(this);
 		vend.getDeliveryChute().register(this);
 		credit = 0;
-		timer = new Timer();
 		coordinateDisplay();
 	}
-
 	
 	/**
 	 * Method to handle what the display should be displaying.
 	 * Should be called whenever the value of credit is updated.
 	 */
 	public void coordinateDisplay() {
+		timer = new Timer();
 		if (credit == 0) {
 			timerCycles = 0;
 			timer.schedule(timerResponder, 0, 5000);
 		}
 		else {
-			timer.cancel();
+			if (timer != null) {
+				timer.cancel();
+			}
+			timer = null;
 			displayWithCredit();
 		}
 		
@@ -88,6 +90,7 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 			}
 			else if ((timerCycles % 3) == 1) {
 				vend.getDisplay().display("");
+				timerCycles++;
 			}
 			else if ((timerCycles % 3) == 2) {
 				timerCycles = 0;
@@ -152,7 +155,7 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 	public void messageChange(Display display, String oldMessage, String newMessage) {
 		// TODO Auto-generated method stub
 		//System.out.println(oldMessage);
-		//System.out.println("Message change: " + newMessage);
+		System.out.println("Message change: " + newMessage);
 		displayMessage = newMessage;
 	}
 
