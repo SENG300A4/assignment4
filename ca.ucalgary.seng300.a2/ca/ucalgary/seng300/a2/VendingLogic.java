@@ -20,7 +20,7 @@ import java.awt.event.ActionListener;
 import java.util.Timer;
 import java.util.TimerTask;
 
-public class VendingLogic implements CoinSlotListener, DisplayListener{
+public class VendingLogic implements CoinSlotListener, DisplayListener, PushButtonListener, DeliveryChuteListener{
 
 	private VendingMachine vend;
 	private int credit;
@@ -38,6 +38,7 @@ public class VendingLogic implements CoinSlotListener, DisplayListener{
 		// Register as listener with relevant components
 		vend.getCoinSlot().register(this);
 		vend.getDisplay().register(this);
+		vend.getDeliveryChute().register(this);
 		credit = 0;
 		timer = new Timer();
 		coordinateDisplay();
@@ -133,6 +134,13 @@ public class VendingLogic implements CoinSlotListener, DisplayListener{
 		return displayMessage;
 	}
 	
+	/**
+	 * Getter for the credit
+	 */
+	public int getCredit() {
+		return credit;
+	}
+	
 	
 	/**
 	 * Method to listen to changes in display messages
@@ -146,6 +154,77 @@ public class VendingLogic implements CoinSlotListener, DisplayListener{
 		//System.out.println(oldMessage);
 		//System.out.println("Message change: " + newMessage);
 		displayMessage = newMessage;
+	}
+
+
+	/**
+	 * Method to listen for button presses and respond with appropriate logic
+	 * (Is there enough pop in the rack, enough credits, etc.)
+	 * @param button - the button which has been pressed by the user
+	 */
+	@Override
+	public void pressed(PushButton button) {
+		for (int i = 0; i < vend.getNumberOfSelectionButtons(); i++) {
+			//Make sure the button matches one from the vending machine
+			if (button == vend.getSelectionButton(i)) {
+				//Ensure there is a pop in the rack
+				if (vend.getPopCanRack(i).size() > 0) {
+					//Ensure there is enough credit to purchase the pop
+					if (vend.getPopKindCost(i) <= credit) {
+						//Ensure there is enough space in the delivery chute
+						if (vend.getDeliveryChute().hasSpace()) {
+							try {
+								//Dispense the pop can
+								vend.getPopCanRack(i).dispensePopCan();
+								credit -= vend.getPopKindCost(i);
+								coordinateDisplay();
+								break;
+							} catch (CapacityExceededException e) {
+								chuteFull(vend.getDeliveryChute());
+							} catch (DisabledException e) {
+								System.out.println("Device disabled.");
+							} catch (EmptyException e) {
+								System.out.println("No pop in the rack.");
+							}
+						}
+					}
+					else
+						System.out.println("Not enough credit.");
+				}
+				else if (vend.getPopCanRack(i).size() <= 0)
+					System.out.println("No pops of this type to dispense");
+			}
+			else if (i == vend.getNumberOfSelectionButtons() - 1)
+				System.out.println("Invalid button selected.");
+		}
+		
+	}
+
+
+	@Override
+	public void itemDelivered(DeliveryChute chute) {
+		// TODO Auto-generated method stub
+		
+	}
+
+
+	@Override
+	public void doorOpened(DeliveryChute chute) {
+		// TODO Auto-generated method stub
+		
+	}
+
+
+	@Override
+	public void doorClosed(DeliveryChute chute) {
+		// TODO Auto-generated method stub
+		
+	}
+
+
+	@Override
+	public void chuteFull(DeliveryChute chute) {
+		System.out.println("Delivery chute capacity exceeded.");
 	}
 	
 } // end class

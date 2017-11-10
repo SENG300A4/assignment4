@@ -48,7 +48,15 @@ public class TestVendingLogic {
 		VendingLogic vendingLogic = new VendingLogic(vendingMachine);
 		
 		this.vendingMachine = vendingMachine;
-		this.vendingLogic = vendingLogic;	
+		this.vendingLogic = vendingLogic;
+		
+		//Configure different pop cans up to the number in the vending machine
+		//and load one pop into each rack
+		PopCan[] popCans = new PopCan[vendingMachine.getNumberOfPopCanRacks()];
+		for (int i = 0; i < vendingMachine.getNumberOfPopCanRacks(); i++) {
+			popCans[i] = new PopCan("coke " + i);
+			vendingMachine.getPopCanRack(i).load(popCans[i]);
+		}
 	}
 
 	@After
@@ -72,6 +80,27 @@ public class TestVendingLogic {
 			e.printStackTrace();
 		}
 		
+	}
+	
+	/**
+	 * Tests if pop is dispensed correctly with valid coin insertions and button presses
+	 */
+	@Test
+	public void testDispense() {
+		Coin tenCents = new Coin(10);
+		int currentCredit = 10;
+		try {
+			vendingMachine.getCoinSlot().addCoin(tenCents);
+			//Test once for each button
+			for (int i = 0; i < vendingMachine.getNumberOfSelectionButtons(); i++) {
+				vendingLogic.pressed(vendingMachine.getSelectionButton(i));
+				assertEquals(currentCredit - vendingMachine.getPopKindCost(i), vendingLogic.getCredit());
+				assertEquals(0, vendingMachine.getPopCanRack(i).size());
+				currentCredit -= vendingMachine.getPopKindCost(i);
+			}
+		} catch (DisabledException e) {
+			System.out.println("Coin Slot disabled.");
+		}
 	}
 
 }
