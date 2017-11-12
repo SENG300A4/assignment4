@@ -14,6 +14,9 @@ package ca.ucalgary.seng300.a2.test;
 
 import static org.junit.Assert.*;
 
+import java.util.Timer;
+import java.util.TimerTask;
+
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -28,7 +31,7 @@ public class TestVendingLogic {
 	private int[] canadianCoins = { 5, 10, 25, 100, 200 };
 	private VendingLogic vendingLogic;
 	private VendingMachine vendingMachine;
-	
+	private long elapsedTime;
 	
 	@BeforeClass
 	public static void setUpBeforeClass() throws Exception {
@@ -80,6 +83,37 @@ public class TestVendingLogic {
 			e.printStackTrace();
 		}
 		
+	}
+	/**
+	 * Tests if display shows "Hi there!" message for the first five seconds, followed by an empty message for 10 seconds
+	 */
+	@Test
+	public void testDisplayCoordination() throws InterruptedException {
+		long startTime = System.currentTimeMillis();
+		elapsedTime = 0L;
+
+		//System.out.println(vendingLogic.getDisplayMessage());
+		//Throw your exception
+		
+		Timer timer = new Timer();
+		int temp = 0;
+		timer.scheduleAtFixedRate(new TimerTask() {
+			  @Override
+			  public void run() {
+				  if(elapsedTime < 5000 && vendingLogic.getDisplayMessage() != "Hi there!") {
+					  fail();
+				  }
+				  if(elapsedTime > 5000 && elapsedTime < 10000 && vendingLogic.getDisplayMessage() != "") {
+					  fail();
+				  }
+			  }
+			}, 500, 5000);
+		
+		while (elapsedTime < 10000) {
+		    //perform db poll/check
+
+		    elapsedTime = System.currentTimeMillis() - startTime;
+		}
 	}
 	
 	/**

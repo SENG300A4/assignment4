@@ -149,7 +149,13 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 		return credit;
 	}
 	
+	public void setTimerCycles(int timerCycles) {
+		this.timerCycles = timerCycles;
+	}
 	
+	public int getTimerCycles() {
+		return timerCycles;
+	}
 	/**
 	 * Method to listen to changes in display messages
 	 * @param display - the device on which the event occurred 
