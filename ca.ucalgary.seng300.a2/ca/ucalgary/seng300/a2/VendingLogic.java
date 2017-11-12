@@ -43,6 +43,8 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 		coordinateDisplay();
 	}
 	
+	
+	
 	/**
 	 * Method to handle what the display should be displaying.
 	 * Should be called whenever the value of credit is updated.
@@ -149,13 +151,7 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 		return credit;
 	}
 	
-	public void setTimerCycles(int timerCycles) {
-		this.timerCycles = timerCycles;
-	}
-	
-	public int getTimerCycles() {
-		return timerCycles;
-	}
+
 	/**
 	 * Method to listen to changes in display messages
 	 * @param display - the device on which the event occurred 

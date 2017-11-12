@@ -91,12 +91,8 @@ public class TestVendingLogic {
 	public void testDisplayCoordination() throws InterruptedException {
 		long startTime = System.currentTimeMillis();
 		elapsedTime = 0L;
-
-		//System.out.println(vendingLogic.getDisplayMessage());
-		//Throw your exception
 		
 		Timer timer = new Timer();
-		int temp = 0;
 		timer.scheduleAtFixedRate(new TimerTask() {
 			  @Override
 			  public void run() {
@@ -110,8 +106,6 @@ public class TestVendingLogic {
 			}, 500, 5000);
 		
 		while (elapsedTime < 10000) {
-		    //perform db poll/check
-
 		    elapsedTime = System.currentTimeMillis() - startTime;
 		}
 	}
