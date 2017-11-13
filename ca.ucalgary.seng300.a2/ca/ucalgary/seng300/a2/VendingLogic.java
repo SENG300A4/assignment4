@@ -20,7 +20,7 @@ import java.awt.event.ActionListener;
 import java.util.Timer;
 import java.util.TimerTask;
 
-public class VendingLogic implements CoinSlotListener, DisplayListener{
+public class VendingLogic implements CoinSlotListener, DisplayListener, PushButtonListener, DeliveryChuteListener{
 
 	private VendingMachine vend;
 	private int credit;
@@ -38,21 +38,31 @@ public class VendingLogic implements CoinSlotListener, DisplayListener{
 		// Register as listener with relevant components
 		vend.getCoinSlot().register(this);
 		vend.getDisplay().register(this);
+		vend.getDeliveryChute().register(this);
 		credit = 0;
-		timer = new Timer();
+		coordinateDisplay();
 	}
-
 	
 	/**
 	 * Method to handle what the display should be displaying.
 	 * Should be called whenever the value of credit is updated.
 	 */
 	public void coordinateDisplay() {
+		timer = new Timer();
 		if (credit == 0) {
 			timerCycles = 0;
-			timer.schedule(timerResponder, 5000);
+			try {
+				timer.schedule(timerResponder, 0, 5000);
+			}
+			catch (IllegalStateException e) {
+				
+			};
 		}
 		else {
+			if (timer != null) {
+				timer.cancel();
+			}
+			timer = null;
 			displayWithCredit();
 		}
 		
@@ -132,6 +142,203 @@ public class VendingLogic implements CoinSlotListener, DisplayListener{
 		return displayMessage;
 	}
 	
+	/**
+	 * Getter for the credit
+	 */
+	public int getCredit() {
+		return credit;
+	}
+	
+	/**
+	 * Method to check if exact change may not be possible
+	 * @return possible -- boolean saying whether or not exact change is possible
+	 */
+	public boolean exactChangePossible()
+	{
+		boolean possible = true;
+		//Checking for coin levels of each rack or at least one empty rack. If any is below threshold of 5, exact change may not be possible 
+		
+		int i = 0;
+		boolean emptyRack = false;
+		boolean underFive = false;
+		while (i < vend.getNumberOfCoinRacks())
+		{
+			if (vend.getCoinRack(i).size() == 0)
+			{
+				emptyRack = true;
+			}
+			
+			else if(vend.getCoinRack(i).size() < 5)
+			{
+				underFive = true;
+			}
+		}
+			
+		if (emptyRack == true || underFive == true)
+		{
+			possible = false;
+		}
+		
+		return possible;
+	}
+	
+	/**
+	 * Method to provide change after pop has been vended
+	 * @return Remaining credit (should be zero if exact change is returned)
+	 * 
+	 */
+	public int provideChange(int credit)
+	{
+		int changeDue = credit;
+		int numCoins = 5; //5 Canadian coins: $0.05, $0.10, $0.25, $1.00, $2.00
+		int typeCoin;
+		Coin returnCoin;
+		
+		if (changeDue != 0)
+		{
+			for (int j = numCoins - 1; j >= 0; j--)
+			{
+				typeCoin = vend.getCoinKindForCoinRack(j); //Coin Kinds are initialized when machine is set up, assuming they are standard Canadian denominations here
+				if ((changeDue/typeCoin) >= 1 && vend.getCoinRackForCoinKind(typeCoin).size() != 0)
+				{
+					try
+					{
+						vend.getCoinRackForCoinKind(typeCoin).releaseCoin(); //Releases specific coin from coin rack
+						returnCoin = new Coin(typeCoin); //Coin of the type released
+						vend.getCoinReturn().acceptCoin(returnCoin); //Adds coin to coin return
+						changeDue = changeDue - typeCoin; //Reduces credit by amount released
+						if((changeDue/typeCoin) < 1)
+						{
+							j++;
+						}
+					}
+					catch (CapacityExceededException|EmptyException|DisabledException e)
+					{
+						outOfOrderLight(true);
+					};
+
+				}
+				
+				else if ((changeDue/typeCoin) < 1)
+				{
+					j++;
+				}
+				
+			}
+			
+		}
+
+		vend.getCoinReturn().unload(); //Simulates physical unloading 
+		exactChangeLight(exactChangePossible());
+		return changeDue;
+	}
+	
+	
+	
+	/**
+	 * Method to control "Exact Change Only" light, which turns on when exact change cannot be guaranteed 
+	 * for all possible transactions
+	 */
+	
+	public void exactChangeLight(boolean status)
+	{
+		if(status == true)
+		{
+			vend.getExactChangeLight().activate();
+		}
+		
+		else if(status == false)
+		{
+			vend.getExactChangeLight().deactivate();
+		}
+
+	}
+	
+	
+	/**
+	 * Method to check whether coin racks are full or not
+	 * @return boolean (true or false) saying whether or not coin racks are full
+	 */
+	public boolean fullCoinRacks()
+	{
+		//Turning on outOfOrderLight for full coinRacks
+		int i = 0;
+		int fullRacks = 0;
+		while (i < vend.getNumberOfCoinRacks())
+		{
+			if (vend.getCoinRack(i).hasSpace() == false)
+			{
+				fullRacks++;
+			}
+		}
+			
+		if (fullRacks == (vend.getNumberOfCoinRacks() -1))
+		{
+			return true;
+		}
+			
+		
+		else
+		{
+			return false;
+		}
+				
+	}
+	
+	
+	/**
+	 * Method to check if vending machine is completely empty
+	 * @return emptyStatus -- true if empty, false if not empty
+	 * 
+	 */
+	
+	public boolean machineEmpty()
+	{
+		int emptyPopRacks = 0;
+		boolean emptyStatus = false;
+		for (int i = 0; i < vend.getNumberOfSelectionButtons(); i++) 
+		{
+			if (vend.getPopCanRack(i).size() == 0) {
+				emptyPopRacks++;
+			}
+			
+		}
+		
+		if(emptyPopRacks == vend.getNumberOfPopCanRacks())
+		{
+			emptyStatus = true;
+		}
+		
+		return emptyStatus;
+	}
+	
+	/**
+	 * Method to control "Out of Order" light, which turns on when:
+	 * - Machine cannot store additional coins
+	 * - Machine becomes aware of problem that cannot be recovered from (including being out of pop)
+	 * - Safety is enabled (already happens in hardware, don't need to add here)
+	 * 
+	 */
+	
+	public void outOfOrderLight(boolean status)
+	{
+		
+		if (status == true)
+		{
+			vend.getOutOfOrderLight().activate();
+		}
+		
+	
+		
+		else if (status == false)
+		{
+			vend.getOutOfOrderLight().deactivate();
+		}
+		
+
+	}
+	
+	
 	
 	/**
 	 * Method to listen to changes in display messages
@@ -143,10 +350,84 @@ public class VendingLogic implements CoinSlotListener, DisplayListener{
 	public void messageChange(Display display, String oldMessage, String newMessage) {
 		// TODO Auto-generated method stub
 		//System.out.println(oldMessage);
-		//System.out.println(newMessage);
+		//System.out.println("Message change: " + newMessage);
 		displayMessage = newMessage;
+	}
+
+
+	/**
+	 * Method to listen for button presses and respond with appropriate logic
+	 * (Is there enough pop in the rack, enough credits, etc.)
+	 * @param button - the button which has been pressed by the user
+	 */
+	@Override
+	public void pressed(PushButton button) {
+		for (int i = 0; i < vend.getNumberOfSelectionButtons(); i++) {
+			//Make sure the button matches one from the vending machine
+			if (button == vend.getSelectionButton(i)) {
+				//Ensure there is a pop in the rack
+				if (vend.getPopCanRack(i).size() > 0) {
+					//Ensure there is enough credit to purchase the pop
+					if (vend.getPopKindCost(i) <= credit) {
+						//Ensure there is enough space in the delivery chute
+						if (vend.getDeliveryChute().hasSpace()) {
+							try {
+								//Dispense the pop can
+								vend.getPopCanRack(i).dispensePopCan();
+								credit -= vend.getPopKindCost(i);
+								credit = provideChange(credit);
+								
+								coordinateDisplay();
+								break;
+							} catch (CapacityExceededException e) {
+								chuteFull(vend.getDeliveryChute());
+							} catch (DisabledException e) {
+								System.out.println("Device disabled.");
+								outOfOrderLight(true);
+							} catch (EmptyException e) {
+								System.out.println("No pop in the rack.");
+							}
+						}
+					}
+					else
+						System.out.println("Not enough credit.");
+				}
+				else if (vend.getPopCanRack(i).size() <= 0)
+					System.out.println("No pops of this type to dispense");
+			}
+			else if (i == vend.getNumberOfSelectionButtons() - 1)
+				System.out.println("Invalid button selected.");
+		}
+		
+		outOfOrderLight(machineEmpty()); //Check after each press if machine is empty and If empty, turn on out of order light
+	}
+
+	
+
+	@Override
+	public void itemDelivered(DeliveryChute chute) {
+		// TODO Auto-generated method stub
 		
 	}
-	
+
+
+	@Override
+	public void doorOpened(DeliveryChute chute) {
+		// TODO Auto-generated method stub
+		
+	}
+
+
+	@Override
+	public void doorClosed(DeliveryChute chute) {
+		// TODO Auto-generated method stub
+		
+	}
+
+
+	@Override
+	public void chuteFull(DeliveryChute chute) {
+		System.out.println("Delivery chute capacity exceeded.");
+	}
 	
 } // end class
