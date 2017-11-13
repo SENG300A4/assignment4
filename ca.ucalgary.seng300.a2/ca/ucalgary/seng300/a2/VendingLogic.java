@@ -184,6 +184,7 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 	
 	/**
 	 * Method to provide change after pop has been vended
+	 * @param changeDue -- the customer's remaining credit after the pop has been purchased, and the amount which should be returned to the customer. If exact change is not possible, as much of this credit as possible is returned without going over.
 	 * @return Remaining credit (should be zero if exact change is returned)
 	 * 
 	 */
@@ -237,6 +238,7 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 	/**
 	 * Method to control "Exact Change Only" light, which turns on when exact change cannot be guaranteed 
 	 * for all possible transactions
+	 * @param status -- whether or not the exact change only light needs to be turned on due to not being able to guarantee that exact change can be returned.
 	 */
 	
 	public void exactChangeLight(boolean status)
@@ -317,6 +319,7 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 	 * - Machine becomes aware of problem that cannot be recovered from (including being out of pop)
 	 * - Safety is enabled (already happens in hardware, don't need to add here)
 	 * 
+	 * @param status -- whether or not the Out of Order light needs to be turned on, due to some sort of issue that renders the machine unusable.
 	 */
 	
 	public void outOfOrderLight(boolean status)
