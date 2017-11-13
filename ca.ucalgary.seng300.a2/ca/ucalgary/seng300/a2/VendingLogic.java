@@ -187,10 +187,9 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 	 * @return Remaining credit (should be zero if exact change is returned)
 	 * 
 	 */
-	public int provideChange(int credit)
+	public int provideChange(int changeDue)
 	{
-		int changeDue = credit;
-		int numCoins = 5; //5 Canadian coins: $0.05, $0.10, $0.25, $1.00, $2.00
+		int numCoins = vend.getNumberOfCoinRacks();
 		int typeCoin;
 		Coin returnCoin;
 		
