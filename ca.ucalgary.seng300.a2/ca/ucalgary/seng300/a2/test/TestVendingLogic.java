@@ -14,6 +14,7 @@ package ca.ucalgary.seng300.a2.test;
 
 import static org.junit.Assert.*;
 
+import java.util.Arrays;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -32,6 +33,7 @@ public class TestVendingLogic {
 	private VendingLogic vendingLogic;
 	private VendingMachine vendingMachine;
 	private long elapsedTime;
+	private int coinRackCapacity = 15;
 	
 	@BeforeClass
 	public static void setUpBeforeClass() throws Exception {
@@ -47,7 +49,7 @@ public class TestVendingLogic {
 		//Canadian coins, 6 types of pop, capacity of coinRack=15, 10 pops per rack, 200 coins in receptacle, 
 		//200 coins in delivery chute, 15 coins in coin return slot
 		
-		VendingMachine vendingMachine = new VendingMachine(canadianCoins, 6, 15, 10, 200, 200, 15);
+		VendingMachine vendingMachine = new VendingMachine(canadianCoins, 6, coinRackCapacity, 10, 200, 200, 15);
 		VendingLogic vendingLogic = new VendingLogic(vendingMachine);
 		
 		this.vendingMachine = vendingMachine;
@@ -60,6 +62,12 @@ public class TestVendingLogic {
 			popCans[i] = new PopCan("coke " + i);
 			vendingMachine.getPopCanRack(i).load(popCans[i]);
 		}
+		
+		int [] coinLoading = new int [vendingMachine.getNumberOfCoinRacks()];
+		for (int i = 0; i < coinLoading.length; i++) {
+			coinLoading[i] = coinRackCapacity;
+		}
+		this.vendingMachine.loadCoins(coinLoading);
 	}
 
 	@After
@@ -129,6 +137,25 @@ public class TestVendingLogic {
 		} catch (DisabledException e) {
 			System.out.println("Coin Slot disabled.");
 		}
+	}
+	
+	/**
+	 * 
+	 * @throws DisabledException
+	 */
+	@Test
+	public void testPressButtonWhenCoinsEnough() throws DisabledException {
+		vendingMachine.getCoinSlot().addCoin(new Coin(200));
+		vendingMachine.getCoinSlot().addCoin(new Coin(25));
+		vendingMachine.getCoinSlot().addCoin(new Coin(25));
+		vendingMachine.getSelectionButton(0).press();
+
+		PopCan [] vendedItems = vendingMachine.getDeliveryChute().removeItems();
+		
+		//Product should have vended and value subtracted
+		assertEquals(0,vendingLogic.getCredit()); 
+		assertEquals(PopCan.class, vendedItems[0].getClass());
+		assertEquals(9, vendingMachine.getPopCanRack(0).size());
 	}
 
 }

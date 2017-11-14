@@ -39,6 +39,9 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 		vend.getCoinSlot().register(this);
 		vend.getDisplay().register(this);
 		vend.getDeliveryChute().register(this);
+		for (int i = 0; i < vend.getNumberOfSelectionButtons(); i++) {
+			vend.getSelectionButton(i).register(this);
+		}
 		credit = 0;
 		coordinateDisplay();
 	}
