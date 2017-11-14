@@ -166,23 +166,23 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 	public boolean exactChangePossible()
 	{
 		boolean possible = true;
-		//Checking for coin levels of each rack or at least one empty rack. If any is below threshold of 5, exact change may not be possible 
+		//Checking for coin levels of each rack or at least one empty rack. 
+		//If any is below threshold of 5, exact change may not be possible 
 		
-		int i = 0;
 		boolean emptyRack = false;
 		boolean underFive = false;
 		
+		for (int i = 0; i < vend.getNumberOfCoinRacks(); i++) {
 			if (vend.getCoinRack(i).size() == 0)
 			{
 				emptyRack = true;
 			}
-			
 			else if(vend.getCoinRack(i).size() < 5)
 			{
 				underFive = true;
 			}
+		}	
 		
-			
 		if (emptyRack == true || underFive == true)
 		{
 			possible = false;
@@ -253,12 +253,12 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 	
 	public void exactChangeLight(boolean status)
 	{
-		if(status == true)
+		if(status == false)
 		{
 			vend.getExactChangeLight().activate();
 		}
 		
-		else if(status == false)
+		else if(status == true)
 		{
 			vend.getExactChangeLight().deactivate();
 		}
