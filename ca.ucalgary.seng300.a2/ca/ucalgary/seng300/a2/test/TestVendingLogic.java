@@ -56,7 +56,7 @@ public class TestVendingLogic {
 		//Configure different pop cans up to the number in the vending machine
 		//and load one pop into each rack
 		PopCan[] popCans = new PopCan[vendingMachine.getNumberOfPopCanRacks()];
-		System.out.println(vendingMachine.getNumberOfPopCanRacks());
+		
 		for (int i = 0; i < vendingMachine.getNumberOfPopCanRacks(); i++) {
 			popCans[i] = new PopCan("coke " + i);
 			vendingMachine.getPopCanRack(i).load(popCans[i]);
@@ -170,9 +170,7 @@ public class TestVendingLogic {
 		int num_toonies = vendingMachine.getCoinRackForCoinKind(200).size();
 		int num_loonies = vendingMachine.getCoinRackForCoinKind(100).size(); 
 		int num_dimes = vendingMachine.getCoinRackForCoinKind(10).size(); 
-		System.out.println(num_toonies);
-		System.out.println(num_loonies);
-		System.out.println(num_dimes);
+
 
 		try {
 			vendingMachine.getCoinSlot().addCoin(toonie);

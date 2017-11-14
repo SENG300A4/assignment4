@@ -17,8 +17,15 @@ import org.lsmr.vending.hardware.*;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.IOException;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.logging.FileHandler;
+import java.util.logging.SimpleFormatter;
+import java.util.logging.FileHandler;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
+
 
 public class VendingLogic implements CoinSlotListener, DisplayListener, PushButtonListener, DeliveryChuteListener{
 
@@ -27,6 +34,9 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 	private Timer timer;
 	private int timerCycles;
 	private String displayMessage;
+	private Logger eventLog = Logger.getLogger("Event-Log");
+	private FileHandler fh;
+
 	
 	/**
 	 * The main constructor. Will register itself as listener for
@@ -42,6 +52,8 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 		for (int i = 0; i < vend.getNumberOfSelectionButtons(); i++) {
 			vend.getSelectionButton(i).register(this);
 		}
+
+
 		credit = 0;
 		coordinateDisplay();
 	}
@@ -76,6 +88,8 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 	 * Method to handle the display message when the user has no credit in the machine
 	 */
 	private void displayNoCredit() {
+		eventLog.info("No Credit");
+
 		vend.getDisplay().display("Hi there!");
 	}
 	
@@ -83,6 +97,8 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 	 * Method to handle the display message when the user has credit in the machine.
 	 */
 	private void displayWithCredit() {
+		eventLog.info("Credit displayed, current credit: " + credit);
+
 		vend.getDisplay().display("Credit: " + credit);
 	}
 	
@@ -127,12 +143,15 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 	public void validCoinInserted(CoinSlot slot, Coin coin) {
 		credit+=coin.getValue();
 		coordinateDisplay();
+		eventLog.info("valid: "+ coin.getValue()+ " coin entered");
+
 	}
 
 	@Override
 	public void coinRejected(CoinSlot slot, Coin coin) {
 		// TODO Auto-generated method stub
-		
+		eventLog.info("Coin rejected");
+
 	}
 	
 	/**
@@ -240,6 +259,8 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 
 		vend.getCoinReturn().unload(); //Simulates physical unloading 
 		exactChangeLight(exactChangePossible());
+		eventLog.info(changeDue+ " returned to user");
+
 		setCredit(changeDue);
 	}
 	
@@ -255,11 +276,16 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 	{
 		if(status == false)
 		{
+            eventLog.info("exact change light enabled");
+
 			vend.getExactChangeLight().activate();
 		}
 		
 		else if(status == true)
 		{
+			eventLog.info("exact change light disabled");
+
+
 			vend.getExactChangeLight().deactivate();
 		}
 
@@ -337,6 +363,8 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 		
 		if (status == true)
 		{
+			eventLog.info("out of order light activated");
+
 			vend.getOutOfOrderLight().activate();
 		}
 		
@@ -344,6 +372,8 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 		
 		else if (status == false)
 		{
+			eventLog.info("out of order light deactivated");
+
 			vend.getOutOfOrderLight().deactivate();
 		}
 		
@@ -389,6 +419,9 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 								credit -= vend.getPopKindCost(i);
 								provideChange(credit);
 								coordinateDisplay();
+								eventLog.info("pop vended from:" + vend.getPopCanRack(i));
+								eventLog.info(credit+ " returned");
+
 								break;
 							} catch (CapacityExceededException e) {
 								chuteFull(vend.getDeliveryChute());
@@ -439,6 +472,29 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 	@Override
 	public void chuteFull(DeliveryChute chute) {
 		System.out.println("Delivery chute capacity exceeded.");
+		eventLog.warning("Delivery chute full");
+
 	}
+	//This method implement the setup logic needed to be able to call the event logger
+	 public void setupLogger() {
+		 try {  
+		        // This block configure the logger with handler and formatter  
+		        fh = new FileHandler("EventLogREW.txt",20000,1, true);  
+		        eventLog.addHandler(fh);
+		        eventLog.setUseParentHandlers(false);
+		        SimpleFormatter formatter = new SimpleFormatter();  
+		        fh.setFormatter(formatter);  
+
+
+		    } catch (SecurityException e) {  
+		        e.printStackTrace();  
+		    } catch (IOException e) {  
+		        e.printStackTrace();  
+		    }  
+
+		
+	}
+
+
 	
 } // end class
