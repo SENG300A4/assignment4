@@ -14,6 +14,12 @@ package ca.ucalgary.seng300.a2.test;
 
 import static org.junit.Assert.*;
 
+
+import java.util.Arrays;
+import java.util.Timer;
+import java.util.TimerTask;
+
+
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -28,8 +34,10 @@ public class TestVendingLogic {
 	private int[] canadianCoins = { 5, 10, 25, 100, 200 };
 	private VendingLogic vendingLogic;
 	private VendingMachine vendingMachine;
-	
-	
+
+	private long elapsedTime;
+	private int coinRackCapacity = 15;
+
 
 	@Before
 	public void setUp() throws Exception {
@@ -37,12 +45,17 @@ public class TestVendingLogic {
 		//Canadian coins, 6 types of pop, capacity of coinRack=15, 10 pops per rack, 200 coins in receptacle, 
 		//200 coins in delivery chute, 15 coins in coin return slot
 		
-		VendingMachine vendingMachine = new VendingMachine(canadianCoins, 6, 15, 10, 200, 200, 15);
+		VendingMachine vendingMachine = new VendingMachine(canadianCoins, 6, coinRackCapacity, 10, 200, 200, 15);
 		VendingLogic vendingLogic = new VendingLogic(vendingMachine);
 		
 		this.vendingMachine = vendingMachine;
 		this.vendingLogic = vendingLogic;
 		
+		// Customize the pop kinds and pop costs in the vending machine
+/*		java.util.List<String> popCanNames = Arrays.asList("Cola","Sprite","Fonda","Diet","GingerAle","DrPepper");
+		java.util.List<Integer> popCanCosts = Arrays.asList(250,250,250,250,250,250);
+		vendingMachine.configure(popCanNames, popCanCosts);		
+*/
 		//Configure different pop cans up to the number in the vending machine
 		//and load one pop into each rack
 		PopCan[] popCans = new PopCan[vendingMachine.getNumberOfPopCanRacks()];
@@ -51,7 +64,15 @@ public class TestVendingLogic {
 			vendingMachine.getPopCanRack(i).load(popCans[i]);
 		}
 		
+
 		vendingMachine.loadCoins(10,10,10,10,10);
+
+		int [] coinLoading = new int [vendingMachine.getNumberOfCoinRacks()];
+		for (int i = 0; i < coinLoading.length; i++) {
+			coinLoading[i] = coinRackCapacity - 5;
+		}
+		this.vendingMachine.loadCoins(coinLoading);
+
 	}
 
 	@After
@@ -98,6 +119,7 @@ public class TestVendingLogic {
 			System.out.println("Coin Slot disabled.");
 		}
 	}
+
 */
 	
 	//***EMILIE'S NOTES (Remove later)*********************
@@ -145,6 +167,39 @@ public class TestVendingLogic {
 		assertEquals(num_loonies - 1, vendingMachine.getCoinRackForCoinKind(100).size());
 		assertEquals(num_dimes - 1, vendingMachine.getCoinRackForCoinKind(10).size());
 		
+
+	
+	/**
+	 * 
+	 * @throws DisabledException
+	 */
+	@Test
+	public void testPressButtonWhenCoinsEnough() throws DisabledException {
+		vendingMachine.getCoinSlot().addCoin(new Coin(200));
+		vendingMachine.getCoinSlot().addCoin(new Coin(25));
+		vendingMachine.getCoinSlot().addCoin(new Coin(25));
+		vendingMachine.getSelectionButton(0).press();
+
+		PopCan [] vendedItems = vendingMachine.getDeliveryChute().removeItems();
+		
+		//Product should have vended and value subtracted
+		assertEquals(250-vendingMachine.getPopKindCost(0),vendingLogic.getCredit()); 
+		assertEquals(PopCan.class, vendedItems[0].getClass());
+		assertEquals(9, vendingMachine.getPopCanRack(0).size());
+	}
+	
+	/**
+	 * Tests the insertion of an invalid coin
+	 * Input - invalid coin (7 cents)
+	 * Expected output - 0
+	 * 
+	 * @throws DisabledException
+	 */
+	@Test
+	public void testInvalidCoin() throws DisabledException {
+		vendingMachine.getCoinSlot().addCoin(new Coin(7));
+		assertEquals(0,vendingLogic.getCredit());
+
 	}
 
 	/*
