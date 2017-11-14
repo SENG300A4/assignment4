@@ -19,11 +19,8 @@ import java.util.Arrays;
 import java.util.Timer;
 import java.util.TimerTask;
 
-
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.lsmr.vending.*;
 import org.lsmr.vending.hardware.*;
@@ -90,7 +87,6 @@ public class TestVendingLogic {
 			assertEquals("Credit: 5", vendingLogic.getDisplayMessage());
 
 		} catch (DisabledException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
@@ -184,7 +180,6 @@ public class TestVendingLogic {
 			vendingMachine.getCoinSlot().addCoin(loonie);
 			vendingMachine.getCoinSlot().addCoin(dime);
 		} catch (DisabledException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
@@ -210,9 +205,9 @@ public class TestVendingLogic {
 		PopCan [] vendedItems = vendingMachine.getDeliveryChute().removeItems();
 
 		//Product should have vended and value subtracted
-		assertEquals(250-vendingMachine.getPopKindCost(0),vendingLogic.getCredit()); 
+		assertEquals(4,vendingLogic.getCredit()); 
 		assertEquals(PopCan.class, vendedItems[0].getClass());
-		assertEquals(9, vendingMachine.getPopCanRack(0).size());
+		assertEquals(0, vendingMachine.getPopCanRack(0).size());
 	}
 
 	/**
