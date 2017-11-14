@@ -56,6 +56,8 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 
 		credit = 0;
 		coordinateDisplay();
+		outOfOrderLight(machineEmpty());
+		exactChangeLight(exactChangePossible());
 	}
 
 	/**
