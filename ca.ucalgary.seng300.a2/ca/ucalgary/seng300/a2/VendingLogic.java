@@ -218,6 +218,7 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 	 */
 	public void provideChange(int changeDue)
 	{
+		int changeToReturn = changeDue;
 		int numCoins = vend.getNumberOfCoinRacks();
 		int typeCoin;
 		Coin returnCoin;
@@ -234,6 +235,7 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 					{
 						vend.getCoinRackForCoinKind(typeCoin).releaseCoin(); //Releases specific coin from coin rack
 						returnCoin = new Coin(typeCoin); //Coin of the type released
+						eventLog.info(typeCoin+ " coin returned to user");
 						vend.getCoinReturn().acceptCoin(returnCoin); //Adds coin to coin return
 						changeDue = changeDue - typeCoin; //Reduces credit by amount released
 						if((changeDue/typeCoin) < 1)
@@ -259,7 +261,8 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 
 		vend.getCoinReturn().unload(); //Simulates physical unloading 
 		exactChangeLight(exactChangePossible());
-		eventLog.info(changeDue+ " returned to user");
+		
+		eventLog.info(changeToReturn - changeDue + " returned to user");
 
 		setCredit(changeDue);
 	}
@@ -420,7 +423,7 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 								provideChange(credit);
 								coordinateDisplay();
 								eventLog.info("pop vended from:" + vend.getPopCanRack(i));
-								eventLog.info(credit+ " returned");
+							
 
 								break;
 							} catch (CapacityExceededException e) {

@@ -42,17 +42,23 @@ public class TestVendingLogic {
 		//Canadian coins, 6 types of pop, capacity of coinRack=15, 10 pops per rack, 200 coins in receptacle, 
 		//200 coins in delivery chute, 15 coins in coin return slot
 
-		VendingMachine vendingMachine = new VendingMachine(canadianCoins, 6, coinRackCapacity, 10, 200, 200, 15);
+		VendingMachine vendingMachine = new VendingMachine(canadianCoins, 6, coinRackCapacity, 15, 200, 200, 15);
 		VendingLogic vendingLogic = new VendingLogic(vendingMachine);
 
 		this.vendingMachine = vendingMachine;
 		this.vendingLogic = vendingLogic;
 
 		// Customize the pop kinds and pop costs in the vending machine
-		/*		java.util.List<String> popCanNames = Arrays.asList("Cola","Sprite","Fonda","Diet","GingerAle","DrPepper");
+				java.util.List<String> popCanNames = Arrays.asList("Cola","Sprite","Fonda","Diet","GingerAle","DrPepper");
 		java.util.List<Integer> popCanCosts = Arrays.asList(250,250,250,250,250,250);
+		int[] popCanCounts = new int[vendingMachine.getNumberOfPopCanRacks()];
+		for (int i = 0; i < popCanCounts.length; i++) {
+			popCanCounts[i] = 1;
+		}
+	
 		vendingMachine.configure(popCanNames, popCanCosts);		
-		 */
+		vendingMachine.loadPopCans(popCanCounts);
+		 /*
 		//Configure different pop cans up to the number in the vending machine
 		//and load one pop into each rack
 		PopCan[] popCans = new PopCan[vendingMachine.getNumberOfPopCanRacks()];
@@ -61,6 +67,8 @@ public class TestVendingLogic {
 			popCans[i] = new PopCan("coke " + i);
 			vendingMachine.getPopCanRack(i).load(popCans[i]);
 		}
+		*/
+		
 		
 		int [] coinLoading = new int [vendingMachine.getNumberOfCoinRacks()];
 		for (int i = 0; i < coinLoading.length; i++) {
@@ -124,26 +132,29 @@ public class TestVendingLogic {
 	/**
 	 * Tests if pop is dispensed correctly with valid coin insertions and button presses
 	 */
-	/*	
+	
 	@Test
 	public void testDispense() {
-		Coin tenCents = new Coin(10);
-		int currentCredit = 10;
+		Coin toonie = new Coin(200);
+
 		try {
-			vendingMachine.getCoinSlot().addCoin(tenCents);
+
 			//Test once for each button
-			for (int i = 0; i < vendingMachine.getNumberOfSelectionButtons(); i++) {
-				vendingLogic.pressed(vendingMachine.getSelectionButton(i));
-				assertEquals(currentCredit - vendingMachine.getPopKindCost(i), vendingLogic.getCredit());
-				assertEquals(0, vendingMachine.getPopCanRack(i).size());
-				currentCredit -= vendingMachine.getPopKindCost(i);
-			}
+			//for (int i = 0; i < vendingMachine.getNumberOfSelectionButtons(); i++) {
+				vendingMachine.getCoinSlot().addCoin(toonie);
+				vendingMachine.getCoinSlot().addCoin(toonie);
+				vendingMachine.getCoinSlot().addCoin(toonie);
+				vendingLogic.pressed(vendingMachine.getSelectionButton(0));
+				
+		
+		assertEquals(0, vendingMachine.getPopCanRack(0).size());
+			
 		} catch (DisabledException e) {
 			System.out.println("Coin Slot disabled.");
 		}
 	}
 
-	 */
+	 
 
 	//***EMILIE'S NOTES (Remove later)*********************
 	/*Test: Machine returns change: -when exact change is provided (credit == 0)
@@ -198,12 +209,13 @@ public class TestVendingLogic {
 		vendingMachine.getCoinSlot().addCoin(new Coin(200));
 		vendingMachine.getCoinSlot().addCoin(new Coin(25));
 		vendingMachine.getCoinSlot().addCoin(new Coin(25));
+		
 		vendingMachine.getSelectionButton(0).press();
 
 		PopCan [] vendedItems = vendingMachine.getDeliveryChute().removeItems();
 
 		//Product should have vended and value subtracted
-		assertEquals(4,vendingLogic.getCredit()); 
+		assertEquals(0,vendingLogic.getCredit()); 
 		assertEquals(PopCan.class, vendedItems[0].getClass());
 		assertEquals(0, vendingMachine.getPopCanRack(0).size());
 	}
