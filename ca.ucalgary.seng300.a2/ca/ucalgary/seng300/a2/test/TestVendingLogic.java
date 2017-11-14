@@ -118,7 +118,7 @@ public class TestVendingLogic {
 	/**
 	 * Tests if pop is dispensed correctly with valid coin insertions and button presses
 	 */
-	@Test
+/*	@Test
 	public void testDispense() {
 		Coin tenCents = new Coin(10);
 		int currentCredit = 10;
@@ -135,7 +135,7 @@ public class TestVendingLogic {
 			System.out.println("Coin Slot disabled.");
 		}
 	}
-	
+*/	
 	/**
 	 * 
 	 * @throws DisabledException
@@ -153,6 +153,20 @@ public class TestVendingLogic {
 		assertEquals(250-vendingMachine.getPopKindCost(0),vendingLogic.getCredit()); 
 		assertEquals(PopCan.class, vendedItems[0].getClass());
 		assertEquals(9, vendingMachine.getPopCanRack(0).size());
+	}
+	
+	/**
+	 * Tests the insertion of an invalid coin
+	 * Input - invalid coin (7 cents)
+	 * Expected output - 0
+	 * 
+	 * @throws DisabledException
+	 */
+	@Test
+	public void testInvalidCoin() throws DisabledException {
+		vendingMachine.getCoinSlot().addCoin(new Coin(7));
+		assertEquals(0,vendingLogic.getCredit());
+
 	}
 
 }
