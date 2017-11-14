@@ -62,7 +62,7 @@ public class TestVendingLogic {
 		
 		int [] coinLoading = new int [vendingMachine.getNumberOfCoinRacks()];
 		for (int i = 0; i < coinLoading.length; i++) {
-			coinLoading[i] = coinRackCapacity;
+			coinLoading[i] = coinRackCapacity - 5;
 		}
 		this.vendingMachine.loadCoins(coinLoading);
 	}
@@ -118,7 +118,7 @@ public class TestVendingLogic {
 	/**
 	 * Tests if pop is dispensed correctly with valid coin insertions and button presses
 	 */
-/*	@Test
+	@Test
 	public void testDispense() {
 		Coin tenCents = new Coin(10);
 		int currentCredit = 10;
@@ -135,7 +135,7 @@ public class TestVendingLogic {
 			System.out.println("Coin Slot disabled.");
 		}
 	}
-*/	
+	
 	/**
 	 * 
 	 * @throws DisabledException
