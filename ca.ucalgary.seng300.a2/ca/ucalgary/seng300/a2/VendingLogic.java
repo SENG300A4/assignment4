@@ -148,8 +148,17 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 	public int getCredit() {
 		return credit;
 	}
-
 	
+	/**
+	 * Setter for the credit
+	 */
+	
+	public void setCredit(int newCredit)
+	{
+		credit = newCredit;
+	}
+	
+
 	/**
 	 * Method to check if exact change may not be possible
 	 * @return possible -- boolean saying whether or not exact change is possible
@@ -188,15 +197,16 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 	 * @return Remaining credit (should be zero if exact change is returned)
 	 * 
 	 */
-	public int provideChange(int changeDue)
+	public void provideChange(int changeDue)
 	{
 		int numCoins = vend.getNumberOfCoinRacks();
 		int typeCoin;
 		Coin returnCoin;
+		int j = numCoins - 1;
 		
 		if (changeDue != 0)
 		{
-			for (int j = numCoins - 1; j >= 0; j--)
+			while (j > -1)
 			{
 				typeCoin = vend.getCoinKindForCoinRack(j); //Coin Kinds are initialized when machine is set up, assuming they are standard Canadian denominations here
 				if (((changeDue/typeCoin) >= 1) && vend.getCoinRackForCoinKind(typeCoin).size() != 0)
@@ -209,7 +219,7 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 						changeDue = changeDue - typeCoin; //Reduces credit by amount released
 						if((changeDue/typeCoin) < 1)
 						{
-							j++;
+							j--;
 						}
 					}
 					catch (CapacityExceededException|EmptyException|DisabledException e)
@@ -221,7 +231,7 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 				
 				else if ((changeDue/typeCoin) < 1)
 				{
-					j++;
+					j--;
 				}
 				
 			}
@@ -230,7 +240,7 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 
 		vend.getCoinReturn().unload(); //Simulates physical unloading 
 		exactChangeLight(exactChangePossible());
-		return changeDue;
+		setCredit(changeDue);
 	}
 	
 	
@@ -377,9 +387,7 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 								//Dispense the pop can
 								vend.getPopCanRack(i).dispensePopCan();
 								credit -= vend.getPopKindCost(i);
-								credit = provideChange(credit);
-								
-
+								provideChange(credit);
 								coordinateDisplay();
 								break;
 							} catch (CapacityExceededException e) {
