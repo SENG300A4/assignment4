@@ -17,8 +17,15 @@ import org.lsmr.vending.hardware.*;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.IOException;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.logging.FileHandler;
+import java.util.logging.SimpleFormatter;
+import java.util.logging.FileHandler;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
+
 
 public class VendingLogic implements CoinSlotListener, DisplayListener, PushButtonListener, DeliveryChuteListener{
 
@@ -27,6 +34,8 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 	private Timer timer;
 	private int timerCycles;
 	private String displayMessage;
+	private Logger eventLog = Logger.getLogger("Event-Log");
+	private FileHandler fh;
 	
 	/**
 	 * The main constructor. Will register itself as listener for
@@ -42,7 +51,6 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 		credit = 0;
 		coordinateDisplay();
 	}
-
 	
 	/**
 	 * Method to handle what the display should be displaying.
@@ -74,6 +82,7 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 	 */
 	public void displayNoCredit() {
 		vend.getDisplay().display("Hi there!");
+		eventLog.info("No Credit");
 	}
 	
 	/**
@@ -81,6 +90,7 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 	 */
 	public void displayWithCredit() {
 		vend.getDisplay().display("Credit: " + credit);
+		eventLog.info("Credit displayed, current credit: " + credit);
 	}
 	
 	/**
@@ -127,12 +137,14 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 		//System.out.println("added coin");
 		credit+=coin.getValue();
 		coordinateDisplay();
+		eventLog.info("valid: "+ coin.getValue()+ " coin entered");
 		
 	}
 
 	@Override
 	public void coinRejected(CoinSlot slot, Coin coin) {
 		// TODO Auto-generated method stub
+		eventLog.info("Coin rejected");
 		
 	}
 	
@@ -149,7 +161,6 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 	public int getCredit() {
 		return credit;
 	}
-
 	
 	/**
 	 * Method to check if exact change may not be possible
@@ -186,13 +197,13 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 	
 	/**
 	 * Method to provide change after pop has been vended
-	 * @param changeDue -- the customer's remaining credit after the pop has been purchased, and the amount which should be returned to the customer. If exact change is not possible, as much of this credit as possible is returned without going over.
 	 * @return Remaining credit (should be zero if exact change is returned)
 	 * 
 	 */
-	public int provideChange(int changeDue)
+	public int provideChange(int credit)
 	{
-		int numCoins = vend.getNumberOfCoinRacks();
+		int changeDue = credit;
+		int numCoins = 5; //5 Canadian coins: $0.05, $0.10, $0.25, $1.00, $2.00
 		int typeCoin;
 		Coin returnCoin;
 		
@@ -232,6 +243,7 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 
 		vend.getCoinReturn().unload(); //Simulates physical unloading 
 		exactChangeLight(exactChangePossible());
+		eventLog.info(changeDue+ " returned to user");
 		return changeDue;
 	}
 	
@@ -240,18 +252,20 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 	/**
 	 * Method to control "Exact Change Only" light, which turns on when exact change cannot be guaranteed 
 	 * for all possible transactions
-	 * @param status -- whether or not the exact change only light needs to be turned on due to not being able to guarantee that exact change can be returned.
 	 */
 	
 	public void exactChangeLight(boolean status)
 	{
 		if(status == true)
 		{
+			eventLog.info("exact change light enabled");
 			vend.getExactChangeLight().activate();
+			
 		}
 		
 		else if(status == false)
 		{
+			eventLog.info("exact change light disabled");
 			vend.getExactChangeLight().deactivate();
 		}
 
@@ -321,7 +335,6 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 	 * - Machine becomes aware of problem that cannot be recovered from (including being out of pop)
 	 * - Safety is enabled (already happens in hardware, don't need to add here)
 	 * 
-	 * @param status -- whether or not the Out of Order light needs to be turned on, due to some sort of issue that renders the machine unusable.
 	 */
 	
 	public void outOfOrderLight(boolean status)
@@ -329,6 +342,7 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 		
 		if (status == true)
 		{
+			eventLog.info("out of order light activated");
 			vend.getOutOfOrderLight().activate();
 		}
 		
@@ -336,14 +350,15 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 		
 		else if (status == false)
 		{
+			eventLog.info("out of order light deactivated");
 			vend.getOutOfOrderLight().deactivate();
 		}
 		
 
 	}
-
 	
-
+	
+	
 	/**
 	 * Method to listen to changes in display messages
 	 * @param display - the device on which the event occurred 
@@ -380,16 +395,16 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 								vend.getPopCanRack(i).dispensePopCan();
 								credit -= vend.getPopKindCost(i);
 								credit = provideChange(credit);
-								
-
+								eventLog.info("pop vended from:" + vend.getPopCanRack(i));
+								eventLog.info(credit+ " returned");
 								coordinateDisplay();
 								break;
 							} catch (CapacityExceededException e) {
+								
 								chuteFull(vend.getDeliveryChute());
 							} catch (DisabledException e) {
 								System.out.println("Device disabled.");
 								outOfOrderLight(true);
-
 							} catch (EmptyException e) {
 								System.out.println("No pop in the rack.");
 							}
@@ -408,6 +423,7 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 		outOfOrderLight(machineEmpty()); //Check after each press if machine is empty and If empty, turn on out of order light
 	}
 
+	
 
 	@Override
 	public void itemDelivered(DeliveryChute chute) {
@@ -432,7 +448,30 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 
 	@Override
 	public void chuteFull(DeliveryChute chute) {
+		eventLog.warning("Delivery chute full");
 		System.out.println("Delivery chute capacity exceeded.");
 	}
 	
-} // end class
+	//This method implement the setup logic needed to be able to call the event logger
+	 public void setupLogger() {
+		 try {  
+		        // This block configure the logger with handler and formatter  
+		        fh = new FileHandler("EventLogREW.txt",20000,1, true);  
+		        eventLog.addHandler(fh);
+		        eventLog.setUseParentHandlers(false);
+		        SimpleFormatter formatter = new SimpleFormatter();  
+		        fh.setFormatter(formatter);  
+
+
+		    } catch (SecurityException e) {  
+		        e.printStackTrace();  
+		    } catch (IOException e) {  
+		        e.printStackTrace();  
+		    }  
+
+		
+	}
+}
+	
+	
+ // end class
