@@ -462,8 +462,6 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 		        SimpleFormatter formatter = new SimpleFormatter();  
 		        fh.setFormatter(formatter);  
 
-		        // the following statement is used to log any messages  
-		  //      eventLog.info("My second log");  
 
 		    } catch (SecurityException e) {  
 		        e.printStackTrace();  
@@ -471,7 +469,6 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 		        e.printStackTrace();  
 		    }  
 
-		  //  eventLog.info("Hi How r u? im coming from the test");  
 		
 	}
 }
