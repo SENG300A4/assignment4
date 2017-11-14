@@ -34,14 +34,6 @@ public class TestVendingLogic {
 	private VendingMachine vendingMachine;
 	private long elapsedTime;
 	private int coinRackCapacity = 15;
-	
-	@BeforeClass
-	public static void setUpBeforeClass() throws Exception {
-	}
-
-	@AfterClass
-	public static void tearDownAfterClass() throws Exception {
-	}
 
 	@Before
 	public void setUp() throws Exception {
@@ -55,6 +47,11 @@ public class TestVendingLogic {
 		this.vendingMachine = vendingMachine;
 		this.vendingLogic = vendingLogic;
 		
+		// Customize the pop kinds and pop costs in the vending machine
+/*		java.util.List<String> popCanNames = Arrays.asList("Cola","Sprite","Fonda","Diet","GingerAle","DrPepper");
+		java.util.List<Integer> popCanCosts = Arrays.asList(250,250,250,250,250,250);
+		vendingMachine.configure(popCanNames, popCanCosts);		
+*/
 		//Configure different pop cans up to the number in the vending machine
 		//and load one pop into each rack
 		PopCan[] popCans = new PopCan[vendingMachine.getNumberOfPopCanRacks()];
@@ -153,7 +150,7 @@ public class TestVendingLogic {
 		PopCan [] vendedItems = vendingMachine.getDeliveryChute().removeItems();
 		
 		//Product should have vended and value subtracted
-		assertEquals(0,vendingLogic.getCredit()); 
+		assertEquals(250-vendingMachine.getPopKindCost(0),vendingLogic.getCredit()); 
 		assertEquals(PopCan.class, vendedItems[0].getClass());
 		assertEquals(9, vendingMachine.getPopCanRack(0).size());
 	}
