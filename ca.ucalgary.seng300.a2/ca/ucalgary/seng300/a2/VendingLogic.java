@@ -42,6 +42,7 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 		credit = 0;
 		coordinateDisplay();
 	}
+
 	
 	/**
 	 * Method to handle what the display should be displaying.
@@ -148,6 +149,7 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 	public int getCredit() {
 		return credit;
 	}
+
 	
 	/**
 	 * Method to check if exact change may not be possible
@@ -339,9 +341,9 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 		
 
 	}
+
 	
-	
-	
+
 	/**
 	 * Method to listen to changes in display messages
 	 * @param display - the device on which the event occurred 
@@ -379,6 +381,7 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 								credit -= vend.getPopKindCost(i);
 								credit = provideChange(credit);
 								
+
 								coordinateDisplay();
 								break;
 							} catch (CapacityExceededException e) {
@@ -386,6 +389,7 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 							} catch (DisabledException e) {
 								System.out.println("Device disabled.");
 								outOfOrderLight(true);
+
 							} catch (EmptyException e) {
 								System.out.println("No pop in the rack.");
 							}
@@ -404,7 +408,6 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 		outOfOrderLight(machineEmpty()); //Check after each press if machine is empty and If empty, turn on out of order light
 	}
 
-	
 
 	@Override
 	public void itemDelivered(DeliveryChute chute) {
