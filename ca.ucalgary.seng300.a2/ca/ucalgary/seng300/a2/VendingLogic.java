@@ -42,8 +42,7 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 		credit = 0;
 		coordinateDisplay();
 	}
-	
-	
+
 	
 	/**
 	 * Method to handle what the display should be displaying.
@@ -150,6 +149,199 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 	public int getCredit() {
 		return credit;
 	}
+
+	
+	/**
+	 * Method to check if exact change may not be possible
+	 * @return possible -- boolean saying whether or not exact change is possible
+	 */
+	public boolean exactChangePossible()
+	{
+		boolean possible = true;
+		//Checking for coin levels of each rack or at least one empty rack. If any is below threshold of 5, exact change may not be possible 
+		
+		int i = 0;
+		boolean emptyRack = false;
+		boolean underFive = false;
+		while (i < vend.getNumberOfCoinRacks())
+		{
+			if (vend.getCoinRack(i).size() == 0)
+			{
+				emptyRack = true;
+			}
+			
+			else if(vend.getCoinRack(i).size() < 5)
+			{
+				underFive = true;
+			}
+		}
+			
+		if (emptyRack == true || underFive == true)
+		{
+			possible = false;
+		}
+		
+		return possible;
+	}
+	
+	/**
+	 * Method to provide change after pop has been vended
+	 * @param changeDue -- the customer's remaining credit after the pop has been purchased, and the amount which should be returned to the customer. If exact change is not possible, as much of this credit as possible is returned without going over.
+	 * @return Remaining credit (should be zero if exact change is returned)
+	 * 
+	 */
+	public int provideChange(int changeDue)
+	{
+		int numCoins = vend.getNumberOfCoinRacks();
+		int typeCoin;
+		Coin returnCoin;
+		
+		if (changeDue != 0)
+		{
+			for (int j = numCoins - 1; j >= 0; j--)
+			{
+				typeCoin = vend.getCoinKindForCoinRack(j); //Coin Kinds are initialized when machine is set up, assuming they are standard Canadian denominations here
+				if ((changeDue/typeCoin) >= 1 && vend.getCoinRackForCoinKind(typeCoin).size() != 0)
+				{
+					try
+					{
+						vend.getCoinRackForCoinKind(typeCoin).releaseCoin(); //Releases specific coin from coin rack
+						returnCoin = new Coin(typeCoin); //Coin of the type released
+						vend.getCoinReturn().acceptCoin(returnCoin); //Adds coin to coin return
+						changeDue = changeDue - typeCoin; //Reduces credit by amount released
+						if((changeDue/typeCoin) < 1)
+						{
+							j++;
+						}
+					}
+					catch (CapacityExceededException|EmptyException|DisabledException e)
+					{
+						outOfOrderLight(true);
+					};
+
+				}
+				
+				else if ((changeDue/typeCoin) < 1)
+				{
+					j++;
+				}
+				
+			}
+			
+		}
+
+		vend.getCoinReturn().unload(); //Simulates physical unloading 
+		exactChangeLight(exactChangePossible());
+		return changeDue;
+	}
+	
+	
+	
+	/**
+	 * Method to control "Exact Change Only" light, which turns on when exact change cannot be guaranteed 
+	 * for all possible transactions
+	 * @param status -- whether or not the exact change only light needs to be turned on due to not being able to guarantee that exact change can be returned.
+	 */
+	
+	public void exactChangeLight(boolean status)
+	{
+		if(status == true)
+		{
+			vend.getExactChangeLight().activate();
+		}
+		
+		else if(status == false)
+		{
+			vend.getExactChangeLight().deactivate();
+		}
+
+	}
+	
+	
+	/**
+	 * Method to check whether coin racks are full or not
+	 * @return boolean (true or false) saying whether or not coin racks are full
+	 */
+	public boolean fullCoinRacks()
+	{
+		//Turning on outOfOrderLight for full coinRacks
+		int i = 0;
+		int fullRacks = 0;
+		while (i < vend.getNumberOfCoinRacks())
+		{
+			if (vend.getCoinRack(i).hasSpace() == false)
+			{
+				fullRacks++;
+			}
+		}
+			
+		if (fullRacks == (vend.getNumberOfCoinRacks() -1))
+		{
+			return true;
+		}
+			
+		
+		else
+		{
+			return false;
+		}
+				
+	}
+	
+	
+	/**
+	 * Method to check if vending machine is completely empty
+	 * @return emptyStatus -- true if empty, false if not empty
+	 * 
+	 */
+	
+	public boolean machineEmpty()
+	{
+		int emptyPopRacks = 0;
+		boolean emptyStatus = false;
+		for (int i = 0; i < vend.getNumberOfSelectionButtons(); i++) 
+		{
+			if (vend.getPopCanRack(i).size() == 0) {
+				emptyPopRacks++;
+			}
+			
+		}
+		
+		if(emptyPopRacks == vend.getNumberOfPopCanRacks())
+		{
+			emptyStatus = true;
+		}
+		
+		return emptyStatus;
+	}
+	
+	/**
+	 * Method to control "Out of Order" light, which turns on when:
+	 * - Machine cannot store additional coins
+	 * - Machine becomes aware of problem that cannot be recovered from (including being out of pop)
+	 * - Safety is enabled (already happens in hardware, don't need to add here)
+	 * 
+	 * @param status -- whether or not the Out of Order light needs to be turned on, due to some sort of issue that renders the machine unusable.
+	 */
+	
+	public void outOfOrderLight(boolean status)
+	{
+		
+		if (status == true)
+		{
+			vend.getOutOfOrderLight().activate();
+		}
+		
+	
+		
+		else if (status == false)
+		{
+			vend.getOutOfOrderLight().deactivate();
+		}
+		
+
+	}
+
 	
 
 	/**
@@ -187,12 +379,17 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 								//Dispense the pop can
 								vend.getPopCanRack(i).dispensePopCan();
 								credit -= vend.getPopKindCost(i);
+								credit = provideChange(credit);
+								
+
 								coordinateDisplay();
 								break;
 							} catch (CapacityExceededException e) {
 								chuteFull(vend.getDeliveryChute());
 							} catch (DisabledException e) {
 								System.out.println("Device disabled.");
+								outOfOrderLight(true);
+
 							} catch (EmptyException e) {
 								System.out.println("No pop in the rack.");
 							}
@@ -208,6 +405,7 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 				System.out.println("Invalid button selected.");
 		}
 		
+		outOfOrderLight(machineEmpty()); //Check after each press if machine is empty and If empty, turn on out of order light
 	}
 
 
