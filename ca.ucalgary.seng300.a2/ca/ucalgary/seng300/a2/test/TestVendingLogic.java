@@ -14,9 +14,6 @@ package ca.ucalgary.seng300.a2.test;
 
 import static org.junit.Assert.*;
 
-import java.util.Timer;
-import java.util.TimerTask;
-
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -31,15 +28,8 @@ public class TestVendingLogic {
 	private int[] canadianCoins = { 5, 10, 25, 100, 200 };
 	private VendingLogic vendingLogic;
 	private VendingMachine vendingMachine;
-	private long elapsedTime;
 	
-	@BeforeClass
-	public static void setUpBeforeClass() throws Exception {
-	}
-
-	@AfterClass
-	public static void tearDownAfterClass() throws Exception {
-	}
+	
 
 	@Before
 	public void setUp() throws Exception {
@@ -60,6 +50,8 @@ public class TestVendingLogic {
 			popCans[i] = new PopCan("coke " + i);
 			vendingMachine.getPopCanRack(i).load(popCans[i]);
 		}
+		
+		vendingMachine.loadCoins(10,10,10,10,10);
 	}
 
 	@After
@@ -84,35 +76,11 @@ public class TestVendingLogic {
 		}
 		
 	}
-	/**
-	 * Tests if display shows "Hi there!" message for the first five seconds, followed by an empty message for 10 seconds
-	 */
-	@Test
-	public void testDisplayCoordination() throws InterruptedException {
-		long startTime = System.currentTimeMillis();
-		elapsedTime = 0L;
-		
-		Timer timer = new Timer();
-		timer.scheduleAtFixedRate(new TimerTask() {
-			  @Override
-			  public void run() {
-				  if(elapsedTime < 5000 && vendingLogic.getDisplayMessage() != "Hi there!") {
-					  fail();
-				  }
-				  if(elapsedTime > 5000 && elapsedTime < 10000 && vendingLogic.getDisplayMessage() != "") {
-					  fail();
-				  }
-			  }
-			}, 500, 5000);
-		
-		while (elapsedTime < 10000) {
-		    elapsedTime = System.currentTimeMillis() - startTime;
-		}
-	}
-	
+
 	/**
 	 * Tests if pop is dispensed correctly with valid coin insertions and button presses
 	 */
+/*	
 	@Test
 	public void testDispense() {
 		Coin tenCents = new Coin(10);
@@ -130,5 +98,67 @@ public class TestVendingLogic {
 			System.out.println("Coin Slot disabled.");
 		}
 	}
+*/
+	
+	//***EMILIE'S NOTES (Remove later)*********************
+	/*Test: Machine returns change: -when exact change is provided (credit == 0)
+	 *  							-when inexact change is provided (remove from credit)
+	 *      Exact change light is on or off at proper state
+	 *      
+	 *      Out of order light is on or off at proper state
+	 *      
+	 *Unit test methods: -fullCoinRacks
+	 *					-MachineEmpty
+	
+	 */
+	
+	/*
+	 * Tests that exact change is returned from machine when all coin racks have enough coins
+	 */
+	@Test
+	public void testReturnExactChange(){
+		Coin toonie = new Coin(200);
+		Coin loonie = new Coin(100);
+		Coin dime = new Coin(10);
+		
+		//initial number of toonies, loonies, dimes in respective coin racks
+		int num_toonies = vendingMachine.getCoinRackForCoinKind(200).size();
+		int num_loonies = vendingMachine.getCoinRackForCoinKind(100).size(); 
+		int num_dimes = vendingMachine.getCoinRackForCoinKind(10).size(); 
+		System.out.println(num_toonies);
+		System.out.println(num_loonies);
+		System.out.println(num_dimes);
+		
+		try {
+			vendingMachine.getCoinSlot().addCoin(toonie);
+			vendingMachine.getCoinSlot().addCoin(toonie);
+			vendingMachine.getCoinSlot().addCoin(loonie);
+			vendingMachine.getCoinSlot().addCoin(dime);
+		} catch (DisabledException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	
+		vendingLogic.provideChange(vendingLogic.getCredit());
+		assertEquals(0,vendingLogic.getCredit());
+		assertEquals(num_toonies - 2, vendingMachine.getCoinRackForCoinKind(200).size());
+		assertEquals(num_loonies - 1, vendingMachine.getCoinRackForCoinKind(100).size());
+		assertEquals(num_dimes - 1, vendingMachine.getCoinRackForCoinKind(10).size());
+		
+	}
 
+	/*
+	 * Tests that exact change is returned from machine when some, but not all, of the coin racks
+	 * are out of coins
+	 */
+	
+	/*
+	 * Tests that inexact change is returned from machine when not enough coins. Change should be as close as
+	 * possible to exact without going over remaining credit
+	 */
+	
+	
+	
+	
+	
 }
