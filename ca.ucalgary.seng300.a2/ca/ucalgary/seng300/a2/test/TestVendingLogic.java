@@ -64,10 +64,7 @@ public class TestVendingLogic {
 			popCans[i] = new PopCan("coke " + i);
 			vendingMachine.getPopCanRack(i).load(popCans[i]);
 		}
-
-
-		vendingMachine.loadCoins(10,10,10,10,10);
-
+		
 		int [] coinLoading = new int [vendingMachine.getNumberOfCoinRacks()];
 		for (int i = 0; i < coinLoading.length; i++) {
 			coinLoading[i] = coinRackCapacity - 5;
