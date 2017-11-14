@@ -75,14 +75,14 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 	/**
 	 * Method to handle the display message when the user has no credit in the machine
 	 */
-	public void displayNoCredit() {
+	private void displayNoCredit() {
 		vend.getDisplay().display("Hi there!");
 	}
 	
 	/**
 	 * Method to handle the display message when the user has credit in the machine.
 	 */
-	public void displayWithCredit() {
+	private void displayWithCredit() {
 		vend.getDisplay().display("Credit: " + credit);
 	}
 	
@@ -125,12 +125,8 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 	 */
 	@Override
 	public void validCoinInserted(CoinSlot slot, Coin coin) {
-		
-		// TODO Auto-generated method stub
-		//System.out.println("added coin");
 		credit+=coin.getValue();
 		coordinateDisplay();
-		
 	}
 
 	@Override
