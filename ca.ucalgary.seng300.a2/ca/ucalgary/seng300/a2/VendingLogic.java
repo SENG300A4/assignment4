@@ -203,12 +203,14 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 		outerloop: for (int i = vend.getNumberOfPopCanRacks() - 1; i >= 0; i--) {
 			int counter = 0;
 			//Set up dummy coin racks to make calculations without affecting real racks
-			CoinRack[] fakeRacks = new CoinRack[5];
-			fakeRacks[0] = vend.getCoinRack(0);
-			fakeRacks[1] = vend.getCoinRack(1);
-			fakeRacks[2] = vend.getCoinRack(2);
-			fakeRacks[3] = vend.getCoinRack(3);
-			fakeRacks[4] = vend.getCoinRack(4);
+			CoinRack[] fakeRacks = new CoinRack[vend.getNumberOfCoinRacks()];
+			Map<Integer, CoinChannel> coinRackChannels = new HashMap<Integer, CoinChannel>();
+			int [] coinTypes = new int[] {5, 10, 25, 100, 200};
+			for(int k = 0; k < vend.getNumberOfCoinRacks(); k++) {
+			    fakeRacks[k] = new CoinRack(15);
+			    fakeRacks[k].connect(new CoinChannel(vend.getCoinReturn()));
+			    coinRackChannels.put(new Integer(coinTypes[k]), new CoinChannel(fakeRacks[k]));
+			}
 			//Need the remaining credit after a purchase of each kind
 			remainingCredit = credit - vend.getPopKindCost(i);
 			int totalCoinsCounter = 0;
