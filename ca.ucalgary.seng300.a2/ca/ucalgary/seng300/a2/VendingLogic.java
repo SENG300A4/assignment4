@@ -58,7 +58,7 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 		credit = 0;
 		coordinateDisplay();
 		outOfOrderLight(machineEmpty());
-		exactChangeLight(exactChangePossible());
+		exactChangeLight(true);
 	}
 
 	/**
@@ -303,6 +303,7 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 
 	}
 
+	
 	/**
 	 * Method to check whether all coin racks are full or not
 	 * 
@@ -328,6 +329,8 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 		}
 
 	}
+	
+
 
 	/**
 	 * Method to check if vending machine is completely empty
@@ -425,19 +428,22 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 							} catch (CapacityExceededException e) {
 								chuteFull(vend.getDeliveryChute());
 							} catch (DisabledException e) {
-								System.out.println("Device disabled.");
+								vend.getDisplay().display("Device disabled.");
 								outOfOrderLight(true);
 
 							} catch (EmptyException e) {
-								System.out.println("No pop in the rack.");
+								vend.getDisplay().display("No pop in the rack.");
+								eventLog.info("No pop to vend from: " + vend.getPopCanRack(i));
 							}
 						}
 					} else
-						System.out.println("Not enough credit.");
+						vend.getDisplay().display("Not enough credit");
+						eventLog.info("Not enough credit was entered for selection");
 				} else if (vend.getPopCanRack(i).size() <= 0)
-					System.out.println("No pops of this type to dispense");
+					vend.getDisplay().display("No pops of this type to dispense");
+					eventLog.info("No pops of type: " + vend.getPopCanRack(i));
 			} else if (i == vend.getNumberOfSelectionButtons() - 1)
-				System.out.println("Invalid button selected.");
+				eventLog.warning("Invalid button selected");
 		}
 
 		outOfOrderLight(machineEmpty()); 
@@ -489,7 +495,7 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 	public void setupLogger() {
 		try {
 			// This block configures the logger with handler and formatter
-			fh = new FileHandler("EventLog.txt", 20000, 1, true);
+			fh = new FileHandler("EventLogREW.txt", 20000, 1, true);
 			eventLog.addHandler(fh);
 			eventLog.setUseParentHandlers(false);
 			SimpleFormatter formatter = new SimpleFormatter();
