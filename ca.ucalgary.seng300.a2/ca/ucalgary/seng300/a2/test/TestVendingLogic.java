@@ -358,5 +358,31 @@ public class TestVendingLogic {
 		assertEquals(vendingLogic.getCredit(), start_credit);
 		assertEquals(vendingMachine.getPopCanRack(0).size(), num_popCans);
 	}
-
+	
+	/**
+	 * Tests if Exact Change Light is turned on when change cannot be guaranteed
+	 * Also tests if it remains off if change can be guaranteed
+	 */
+	@Test
+	public void testExactChangeLight() {
+		vendingLogic.setChangeLight(false);
+		//Add a toonie to trigger the Exact Change Light getting checked
+		Coin toonie = new Coin(200);
+		try {
+			vendingMachine.getCoinSlot().addCoin(toonie);
+		} catch (DisabledException e) {
+			System.out.println("Coin Slot disabled.");
+		}
+		assertFalse(vendingLogic.getChangeLight());
+		//Empty out all coins but toonies from the coin racks
+		for (int i = 0; i < 4; i++)
+			this.vendingMachine.getCoinRack(i).unload();
+		//Add another toonie to trigger the Exact Change Light getting turned on
+		try {
+			vendingMachine.getCoinSlot().addCoin(toonie);
+		} catch (DisabledException e) {
+			System.out.println("Coin Slot disabled.");
+		}
+		assertTrue(vendingLogic.getChangeLight());
+	}
 }
