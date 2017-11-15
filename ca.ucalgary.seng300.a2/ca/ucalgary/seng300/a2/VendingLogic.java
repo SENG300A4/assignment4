@@ -260,7 +260,7 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 
 				}
 
-				else if ((changeDue / typeCoin) < 1) {
+				else  {
 					j--;
 				}
 
