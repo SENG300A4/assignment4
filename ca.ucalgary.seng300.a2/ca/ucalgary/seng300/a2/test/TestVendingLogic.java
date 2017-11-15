@@ -372,16 +372,17 @@ public class TestVendingLogic {
 		} catch (DisabledException e) {
 			System.out.println("Coin Slot disabled.");
 		}
-		assertFalse(vendingLogic.getChangeLight());
-		//Empty out all coins but toonies from the coin racks
-		for (int i = 0; i < 4; i++)
+		assertFalse(vendingMachine.getExactChangeLight().isActive());
+		//Empty out all coins but from the coin racks
+		for (int i = 0; i < 5; i++)
 			this.vendingMachine.getCoinRack(i).unload();
-		//Add another toonie to trigger the Exact Change Light getting turned on
+		//Add another 2 toonies to trigger the Exact Change Light getting turned on
 		try {
+			vendingMachine.getCoinSlot().addCoin(toonie);
 			vendingMachine.getCoinSlot().addCoin(toonie);
 		} catch (DisabledException e) {
 			System.out.println("Coin Slot disabled.");
 		}
-		assertTrue(vendingLogic.getChangeLight());
+		assertTrue(vendingMachine.getExactChangeLight().isActive());
 	}
 }
