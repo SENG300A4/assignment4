@@ -188,29 +188,64 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 
 	/**
 	 * Method to check if exact change is possible
+	 * Assumes that Canadian coins are used for the vending machine
 	 * 
-	 * @return possible - boolean saying whether or not exact change is possible
+	 * @return - boolean saying whether or not exact change is possible
 	 */
-	public boolean exactChangePossible() {
+	public boolean exactChangePossible(){
+		//Determine how many total coins are in the racks
+		int totalCoins = 0;
+		for (int i = 0; i < vend.getNumberOfCoinRacks(); i++)
+			totalCoins += vend.getCoinRack(i).size();
+		//Need a boolean to see if each type of pop can be purchased
 		boolean possible = true;
-		// Checking for coin levels of each rack or at least one empty rack.
-		// If any is below threshold of 5, exact change may not be possible
-
-		boolean emptyRack = false;
-		boolean underFive = false;
-
-		for (int i = 0; i < vend.getNumberOfCoinRacks(); i++) {
-			if (vend.getCoinRack(i).size() == 0) {
-				emptyRack = true;
-			} else if (vend.getCoinRack(i).size() < 5) {
-				underFive = true;
+		int remainingCredit = 0;
+		outerloop: for (int i = vend.getNumberOfPopCanRacks() - 1; i >= 0; i--) {
+			int counter = 0;
+			//Set up dummy coin racks to make calculations without affecting real racks
+			CoinRack[] fakeRacks = new CoinRack[5];
+			fakeRacks[0] = vend.getCoinRack(0);
+			fakeRacks[1] = vend.getCoinRack(1);
+			fakeRacks[2] = vend.getCoinRack(2);
+			fakeRacks[3] = vend.getCoinRack(3);
+			fakeRacks[4] = vend.getCoinRack(4);
+			//Need the remaining credit after a purchase of each kind
+			remainingCredit = credit - vend.getPopKindCost(i);
+			int totalCoinsCounter = 0;
+			loop: while (remainingCredit > 0) {
+				for (int j = vend.getNumberOfCoinRacks() - 1; j >= 0; j--) {
+					if (remainingCredit >= vend.getCoinKindForCoinRack(j) && fakeRacks[j].size() != 0) {
+						remainingCredit -= vend.getCoinKindForCoinRack(j);
+						try {
+							fakeRacks[j].releaseCoin();
+						} catch (CapacityExceededException e) {
+						} catch (EmptyException e) {
+						} catch (DisabledException e) {
+						}
+						if (counter == fakeRacks[j].size()) {
+							break loop;
+						}
+					}
+					counter++;
+					totalCoinsCounter++;
+					if (totalCoinsCounter == totalCoins)
+						break outerloop;
+				}
 			}
 		}
-
-		if (emptyRack == true || underFive == true) {
+		
+		if (remainingCredit != 0) {
 			possible = false;
 		}
-
+		
+		if (possible == false) {
+			eventLog.warning("Exact change light turned on. Credit = " + credit);
+			vend.getExactChangeLight().activate();
+		}
+		else if (possible == true) {
+			eventLog.info("exact change light turned off. Credit = " + credit);
+			vend.getExactChangeLight().deactivate();
+		}
 		return possible;
 	}
 
