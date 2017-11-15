@@ -365,7 +365,6 @@ public class TestVendingLogic {
 	 */
 	@Test
 	public void testExactChangeLight() {
-		vendingLogic.setChangeLight(false);
 		//Add a toonie to trigger the Exact Change Light getting checked
 		Coin toonie = new Coin(200);
 		try {
