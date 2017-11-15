@@ -33,7 +33,8 @@ public class TestVendingLogic {
 	private VendingMachine vendingMachine;
 
 	private long elapsedTime;
-	private int coinRackCapacity = 15;
+	private int coinRackCapacity = 15; 
+	private int numPopTypes = 6;
 
 
 	@Before
@@ -42,7 +43,7 @@ public class TestVendingLogic {
 		//Canadian coins, 6 types of pop, capacity of coinRack=15, 10 pops per rack, 200 coins in receptacle, 
 		//200 coins in delivery chute, 15 coins in coin return slot
 
-		VendingMachine vendingMachine = new VendingMachine(canadianCoins, 6, coinRackCapacity, 15, 200, 200, 15);
+		VendingMachine vendingMachine = new VendingMachine(canadianCoins, numPopTypes, coinRackCapacity, 15, 200, 200, 15);
 		VendingLogic vendingLogic = new VendingLogic(vendingMachine);
 
 		this.vendingMachine = vendingMachine;
@@ -153,39 +154,25 @@ public class TestVendingLogic {
 			System.out.println("Coin Slot disabled.");
 		}
 	}
-
-	/**
-	 * Tests if out of order light turns on when coin racks are full
-	 */
-	
-	@Test
-	public void testCoinRacksFull() {
-		
-		assertFalse(vendingLogic.fullCoinRacks());
-		
-		int [] coinLoading = new int [vendingMachine.getNumberOfCoinRacks()];
-		for (int i = 0; i < coinLoading.length; i++) {
-			coinLoading[i] = coinRackCapacity-10;
-		}
-		this.vendingMachine.loadCoins(coinLoading);
-		assertTrue(vendingLogic.fullCoinRacks());
-		
-		
+	/**		
+	 * Tests if out of order light turns on when coin racks are full		
+	 */		
+			
+	@Test		
+	public void testCoinRacksFull() {		
+				
+		assertFalse(vendingLogic.fullCoinRacks());		
+				
+		int [] coinLoading = new int [vendingMachine.getNumberOfCoinRacks()];		
+		for (int i = 0; i < coinLoading.length; i++) {		
+			coinLoading[i] = coinRackCapacity-10;		
+		}		
+		this.vendingMachine.loadCoins(coinLoading);		
+		assertTrue(vendingLogic.fullCoinRacks());		
+				
+				
 	}
 
-	 
-
-	//***EMILIE'S NOTES (Remove later)*********************
-	/*Test: Machine returns change: -when exact change is provided (credit == 0)
-	 *  							-when inexact change is provided (remove from credit)
-	 *      Exact change light is on or off at proper state
-	 *      
-	 *      Out of order light is on or off at proper state
-	 *      
-	 *Unit test methods: -fullCoinRacks
-	 *					-MachineEmpty
-
-	 */
 
 	/*
 	 * Tests that exact change is returned from machine when all coin racks have enough coins
@@ -201,7 +188,6 @@ public class TestVendingLogic {
 		int num_loonies = vendingMachine.getCoinRackForCoinKind(100).size(); 
 		int num_dimes = vendingMachine.getCoinRackForCoinKind(10).size(); 
 
-
 		try {
 			vendingMachine.getCoinSlot().addCoin(toonie);
 			vendingMachine.getCoinSlot().addCoin(toonie);
@@ -216,6 +202,7 @@ public class TestVendingLogic {
 		assertEquals(num_toonies - 2, vendingMachine.getCoinRackForCoinKind(200).size());
 		assertEquals(num_loonies - 1, vendingMachine.getCoinRackForCoinKind(100).size());
 		assertEquals(num_dimes - 1, vendingMachine.getCoinRackForCoinKind(10).size());
+		
 
 	}
 
@@ -333,7 +320,52 @@ public class TestVendingLogic {
 		}
 
 
-
-
+		/*
+		 * Tests if Exact Change light is off when racks full, on when one or more racks is empty
+		 */
+		@Test
+		public void testChangeLight() {
+			assertFalse(vendingMachine.getExactChangeLight().isActive());
+			
+			vendingLogic.provideChange(1000);
+			assertFalse(vendingMachine.getExactChangeLight().isActive());
+			vendingLogic.provideChange(1000);
+			assertTrue(vendingMachine.getExactChangeLight().isActive());
+				
+		}
+		
+		/*
+		 * Tests the machineEmpty method
+		 */
+		@Test
+		public void testMachineEmpty() {
+			
+			assertFalse(vendingLogic.machineEmpty());
+			
+			//empty machine
+			for (int i = 0; i < numPopTypes; i++ ) {
+				vendingMachine.getPopCanRack(i).unload();
+			}
+			assertTrue(vendingLogic.machineEmpty());
+			
+		}
+		
+		@Test
+		public void testPressedNotEnoughCredit() {
+			
+			int start_credit = vendingLogic.getCredit();
+			int num_popCans = vendingMachine.getPopCanRack(0).size();
+			
+			vendingLogic.pressed(vendingMachine.getSelectionButton(0));
+			
+			//no pop should have been vended, credit should not have changed
+			assertEquals(vendingLogic.getCredit(), start_credit);
+			assertEquals(vendingMachine.getPopCanRack(0).size(), num_popCans);
+			
+		}
+		
 
 }
+
+
+
