@@ -14,6 +14,7 @@ package ca.ucalgary.seng300.a2.test;
 
 import static org.junit.Assert.*;
 
+
 import java.util.Arrays;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -35,6 +36,7 @@ public class TestVendingLogic {
 	private int coinRackCapacity = 15; 
 	private int numPopTypes = 6;
 
+
 	@Before
 	public void setUp() throws Exception {
 
@@ -48,32 +50,33 @@ public class TestVendingLogic {
 		this.vendingLogic = vendingLogic;
 
 		// Customize the pop kinds and pop costs in the vending machine
-		java.util.List<String> popCanNames = Arrays.asList("Cola", "Sprite", "Fonda", "Diet", "GingerAle", "DrPepper");
-		java.util.List<Integer> popCanCosts = Arrays.asList(195, 195, 195, 195, 195, 195);
+				java.util.List<String> popCanNames = Arrays.asList("Cola","Sprite","Fonda","Diet","GingerAle","DrPepper");
+		java.util.List<Integer> popCanCosts = Arrays.asList(250,250,250,250,250,250);
 		int[] popCanCounts = new int[vendingMachine.getNumberOfPopCanRacks()];
 		for (int i = 0; i < popCanCounts.length; i++) {
 			popCanCounts[i] = 1;
 		}
-
-		vendingMachine.configure(popCanNames, popCanCosts);
+	
+		vendingMachine.configure(popCanNames, popCanCosts);		
 		vendingMachine.loadPopCans(popCanCounts);
-		/*
-		 * //Configure different pop cans up to the number in the vending
-		 * machine and load one pop into each rack
-		 * 
-		 * PopCan[] popCans = new
-		 * PopCan[vendingMachine.getNumberOfPopCanRacks()];
-		 * 
-		 * for (int i = 0; i < vendingMachine.getNumberOfPopCanRacks(); i++) {
-		 * popCans[i] = new PopCan("coke " + i);
-		 * vendingMachine.getPopCanRack(i).load(popCans[i]); }
-		 */
-
-		int[] coinLoading = new int[vendingMachine.getNumberOfCoinRacks()];
+		 /*
+		//Configure different pop cans up to the number in the vending machine
+		//and load one pop into each rack
+		PopCan[] popCans = new PopCan[vendingMachine.getNumberOfPopCanRacks()];
+		
+		for (int i = 0; i < vendingMachine.getNumberOfPopCanRacks(); i++) {
+			popCans[i] = new PopCan("coke " + i);
+			vendingMachine.getPopCanRack(i).load(popCans[i]);
+		}
+		*/
+		
+		
+		int [] coinLoading = new int [vendingMachine.getNumberOfCoinRacks()];
 		for (int i = 0; i < coinLoading.length; i++) {
 			coinLoading[i] = coinRackCapacity - 5;
 		}
 		this.vendingMachine.loadCoins(coinLoading);
+
 	}
 
 	@After
@@ -97,6 +100,7 @@ public class TestVendingLogic {
 		}
 
 	}
+
 
 	/**
 	 * Tests if display shows "Hi there!" message for the first five seconds, followed by an empty message for 10 seconds
@@ -124,8 +128,10 @@ public class TestVendingLogic {
 		}
 	}
 
+
+
 	/**
-	 * Tests if pop is dispensed correctly with valid coin insertions
+	 * Tests if pop is dispensed correctly with valid coin insertions and button presses
 	 */
 	
 	@Test
@@ -133,53 +139,21 @@ public class TestVendingLogic {
 		Coin toonie = new Coin(200);
 
 		try {
-			vendingMachine.getCoinSlot().addCoin(toonie);
-			vendingLogic.pressed(vendingMachine.getSelectionButton(0));
-			assertEquals(0, vendingMachine.getPopCanRack(0).size());
+
+			//Test once for each button
+			//for (int i = 0; i < vendingMachine.getNumberOfSelectionButtons(); i++) {
+				vendingMachine.getCoinSlot().addCoin(toonie);
+				vendingMachine.getCoinSlot().addCoin(toonie);
+				vendingMachine.getCoinSlot().addCoin(toonie);
+				vendingLogic.pressed(vendingMachine.getSelectionButton(0));
+				
+		
+		assertEquals(0, vendingMachine.getPopCanRack(0).size());
+			
 		} catch (DisabledException e) {
 			System.out.println("Coin Slot disabled.");
 		}
 	}
-	
-	/**
-	 * Tests if Exact Change Light is turned on when change cannot be guaranteed
-	 * Also tests if it remains off if change can be guaranteed
-	 */
-	@Test
-	public void testExactChange() {
-		vendingLogic.setChangeLight(false);
-		//Add a toonie to trigger the Exact Change Light getting checked
-		Coin toonie = new Coin(200);
-		try {
-			vendingMachine.getCoinSlot().addCoin(toonie);
-		} catch (DisabledException e) {
-			System.out.println("Coin Slot disabled.");
-		}
-		assertFalse(vendingLogic.getChangeLight());
-		//Empty out all coins but toonies from the coin racks
-		for (int i = 0; i < 4; i++)
-			this.vendingMachine.getCoinRack(i).unload();
-		//Add another toonie to trigger the Exact Change Light getting turned on
-		try {
-			vendingMachine.getCoinSlot().addCoin(toonie);
-		} catch (DisabledException e) {
-			System.out.println("Coin Slot disabled.");
-		}
-		assertTrue(vendingLogic.getChangeLight());
-	}
-
-	// ***EMILIE'S NOTES (Remove later)*********************
-	/*
-	 * Test: Machine returns change: -when exact change is provided (credit ==
-	 * 0) -when inexact change is provided (remove from credit) Exact change
-	 * light is on or off at proper state
-	 * 
-	 * Out of order light is on or off at proper state
-	 * 
-	 * Unit test methods: -fullCoinRacks -MachineEmpty
-	 * 
-	 */
-
 	/**		
 	 * Tests if out of order light turns on when coin racks are full		
 	 */		
@@ -212,7 +186,7 @@ public class TestVendingLogic {
 		//initial number of toonies, loonies, dimes in respective coin racks
 		int num_toonies = vendingMachine.getCoinRackForCoinKind(200).size();
 		int num_loonies = vendingMachine.getCoinRackForCoinKind(100).size(); 
-		int num_dimes = vendingMachine.getCoinRackForCoinKind(10).size();
+		int num_dimes = vendingMachine.getCoinRackForCoinKind(10).size(); 
 
 		try {
 			vendingMachine.getCoinSlot().addCoin(toonie);
@@ -224,36 +198,31 @@ public class TestVendingLogic {
 		}
 
 		vendingLogic.provideChange(vendingLogic.getCredit());
-		assertEquals(0, vendingLogic.getCredit());
+		assertEquals(0,vendingLogic.getCredit());
 		assertEquals(num_toonies - 2, vendingMachine.getCoinRackForCoinKind(200).size());
 		assertEquals(num_loonies - 1, vendingMachine.getCoinRackForCoinKind(100).size());
 		assertEquals(num_dimes - 1, vendingMachine.getCoinRackForCoinKind(10).size());
+		
+
 	}
 
 	/**
-	 * Executes a standard pop purchase as the user would do it
-	 * Coins are loaded, the first button is pressed and the delivery chute
-	 * is checked for the pop (and that it's the correct pop)
-	 * The pop in the machine is also checked
+	 * 
 	 * @throws DisabledException
 	 */
 	@Test
 	public void testPressButtonWhenCoinsEnough() throws DisabledException {
-		vendingMachine.getCoinSlot().addCoin(new Coin(100));
+		vendingMachine.getCoinSlot().addCoin(new Coin(200));
 		vendingMachine.getCoinSlot().addCoin(new Coin(25));
 		vendingMachine.getCoinSlot().addCoin(new Coin(25));
-		vendingMachine.getCoinSlot().addCoin(new Coin(25));
-		vendingMachine.getCoinSlot().addCoin(new Coin(10));
-		vendingMachine.getCoinSlot().addCoin(new Coin(10));
-
+		
 		vendingMachine.getSelectionButton(0).press();
 
-		PopCan[] vendedItems = vendingMachine.getDeliveryChute().removeItems();
+		PopCan [] vendedItems = vendingMachine.getDeliveryChute().removeItems();
 
-		// Product should have vended and value subtracted
-		assertEquals(0, vendingLogic.getCredit());
+		//Product should have vended and value subtracted
+		assertEquals(0,vendingLogic.getCredit()); 
 		assertEquals(PopCan.class, vendedItems[0].getClass());
-		assertEquals("Cola", vendedItems[0].getName());
 		assertEquals(0, vendingMachine.getPopCanRack(0).size());
 	}
 
@@ -396,17 +365,6 @@ public class TestVendingLogic {
 		}
 		
 
-	/**
-	 * Tests the insertion of an invalid coin Input - invalid coin (7 cents)
-	 * Expected output - 0
-	 * 
-	 * @throws DisabledException
-	 */
-	@Test
-	public void testInvalidCoin() throws DisabledException {
-		vendingMachine.getCoinSlot().addCoin(new Coin(7));
-		assertEquals(0, vendingLogic.getCredit());
-	}
 }
 
 
