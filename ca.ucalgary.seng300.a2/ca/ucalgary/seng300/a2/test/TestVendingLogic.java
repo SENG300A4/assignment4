@@ -4,6 +4,7 @@
  * NOTE the testDisplayCoordination method takes 15 seconds to complete 
  * and the testExactChangeLight takes about 27 seconds
  * These methods are not stuck!!
+
  * 
  * Stephen Pollo
  * Simran Rai
