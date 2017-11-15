@@ -45,6 +45,7 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 	 *            The VendingMachine object to control
 	 */
 	public VendingLogic(VendingMachine vending) {
+		setupLogger();
 		vend = vending;
 		
 		// Register as listener with relevant components
@@ -174,7 +175,6 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 		return credit;
 	}
 
-	//TODO 
 	/**
 	 * Setter for the credit
 	 */
@@ -262,8 +262,6 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 		changeLight = false;
 		return false;
 	}
-
-	//TODO @return vs void
 	/**
 	 * Method to provide change after pop has been vended
 	 * 
@@ -322,6 +320,7 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 		vend.getCoinReturn().unload(); // Simulates physical unloading
 		exactChangeLight(exactChangePossible());
 		eventLog.info(changeToReturn - changeDue + " returned to user");
+    setCredit(changeDue);
 	}
 
 	/**
@@ -354,15 +353,14 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 	 */
 	public boolean fullCoinRacks() {
 		// Turning on outOfOrderLight for full coinRacks
-		int i = 0;
 		int fullRacks = 0;
-		while (i < vend.getNumberOfCoinRacks()) {
+		for (int i = 0; i < vend.getNumberOfCoinRacks(); i++) {
 			if (vend.getCoinRack(i).hasSpace() == false) {
 				fullRacks++;
 			}
 		}
 
-		if (fullRacks == (vend.getNumberOfCoinRacks() - 1)) {
+		if (fullRacks == (vend.getNumberOfCoinRacks())) {
 			return true;
 		}
 
@@ -484,7 +482,6 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 		outOfOrderLight(machineEmpty()); 
 		// Check after each press if machine is empty and If empty, turn on out of order light
 	}
-
 	/**
 	 * Required method. Logs the event that an item has been delivered to
 	 * the delivery chute
@@ -528,7 +525,7 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 	public void setupLogger() {
 		try {
 			// This block configures the logger with handler and formatter
-			fh = new FileHandler("EventLogREW.txt", 20000, 1, true);
+			fh = new FileHandler("EventLog.txt", 20000, 1, true);
 			eventLog.addHandler(fh);
 			eventLog.setUseParentHandlers(false);
 			SimpleFormatter formatter = new SimpleFormatter();
