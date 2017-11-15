@@ -44,6 +44,7 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 	 *            The VendingMachine object to control
 	 */
 	public VendingLogic(VendingMachine vending) {
+		setupLogger();
 		vend = vending;
 		
 		// Register as listener with relevant components
@@ -487,7 +488,7 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 	public void setupLogger() {
 		try {
 			// This block configures the logger with handler and formatter
-			fh = new FileHandler("EventLogREW.txt", 20000, 1, true);
+			fh = new FileHandler("EventLog.txt", 20000, 1, true);
 			eventLog.addHandler(fh);
 			eventLog.setUseParentHandlers(false);
 			SimpleFormatter formatter = new SimpleFormatter();
