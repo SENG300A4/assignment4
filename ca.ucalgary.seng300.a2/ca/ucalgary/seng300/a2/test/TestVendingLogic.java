@@ -1,7 +1,10 @@
 /**
  * JUnit Test Suite for VendingLogic class
  * SENG 300 Group Assignment 2
- * NOTE the testDisplayCoordination method takes 15 seconds to complete, it is not stuck
+ * NOTE the testDisplayCoordination method takes 15 seconds to complete 
+ * and the testExactChangeLight takes about 27 seconds
+ * These methods are not stuck!!
+
  * 
  * Stephen Pollo
  * Simran Rai
