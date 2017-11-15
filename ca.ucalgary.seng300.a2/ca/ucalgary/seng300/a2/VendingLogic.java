@@ -18,6 +18,8 @@ import org.lsmr.vending.hardware.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.logging.FileHandler;
@@ -44,6 +46,7 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 	 *            The VendingMachine object to control
 	 */
 	public VendingLogic(VendingMachine vending) {
+		setupLogger();
 		vend = vending;
 		
 		// Register as listener with relevant components
@@ -57,7 +60,7 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 		credit = 0;
 		coordinateDisplay();
 		outOfOrderLight(machineEmpty());
-		exactChangeLight(exactChangePossible());
+		exactChangeLight(true);
 	}
 
 	/**
@@ -187,29 +190,66 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 
 	/**
 	 * Method to check if exact change is possible
+	 * Assumes that Canadian coins are used for the vending machine
 	 * 
-	 * @return possible - boolean saying whether or not exact change is possible
+	 * @return - boolean saying whether or not exact change is possible
 	 */
-	public boolean exactChangePossible() {
+	public boolean exactChangePossible(){
+		//Determine how many total coins are in the racks
+		int totalCoins = 0;
+		for (int i = 0; i < vend.getNumberOfCoinRacks(); i++)
+			totalCoins += vend.getCoinRack(i).size();
+		//Need a boolean to see if each type of pop can be purchased
 		boolean possible = true;
-		// Checking for coin levels of each rack or at least one empty rack.
-		// If any is below threshold of 5, exact change may not be possible
-
-		boolean emptyRack = false;
-		boolean underFive = false;
-
-		for (int i = 0; i < vend.getNumberOfCoinRacks(); i++) {
-			if (vend.getCoinRack(i).size() == 0) {
-				emptyRack = true;
-			} else if (vend.getCoinRack(i).size() < 5) {
-				underFive = true;
+		int remainingCredit = 0;
+		outerloop: for (int i = vend.getNumberOfPopCanRacks() - 1; i >= 0; i--) {
+			int counter = 0;
+			//Set up dummy coin racks to make calculations without affecting real racks
+			CoinRack[] fakeRacks = new CoinRack[vend.getNumberOfCoinRacks()];
+			Map<Integer, CoinChannel> coinRackChannels = new HashMap<Integer, CoinChannel>();
+			int [] coinTypes = new int[] {5, 10, 25, 100, 200};
+			for(int k = 0; k < vend.getNumberOfCoinRacks(); k++) {
+			    fakeRacks[k] = new CoinRack(15);
+			    fakeRacks[k].connect(new CoinChannel(vend.getCoinReturn()));
+			    coinRackChannels.put(new Integer(coinTypes[k]), new CoinChannel(fakeRacks[k]));
+			}
+			//Need the remaining credit after a purchase of each kind
+			remainingCredit = credit - vend.getPopKindCost(i);
+			int totalCoinsCounter = 0;
+			loop: while (remainingCredit > 0) {
+				for (int j = vend.getNumberOfCoinRacks() - 1; j >= 0; j--) {
+					if (remainingCredit >= vend.getCoinKindForCoinRack(j) && fakeRacks[j].size() != 0) {
+						remainingCredit -= vend.getCoinKindForCoinRack(j);
+						try {
+							fakeRacks[j].releaseCoin();
+						} catch (CapacityExceededException e) {
+						} catch (EmptyException e) {
+						} catch (DisabledException e) {
+						}
+						if (counter == fakeRacks[j].size()) {
+							break loop;
+						}
+					}
+					counter++;
+					totalCoinsCounter++;
+					if (totalCoinsCounter == totalCoins)
+						break outerloop;
+				}
 			}
 		}
-
-		if (emptyRack == true || underFive == true) {
+		
+		if (remainingCredit != 0) {
 			possible = false;
 		}
-
+		
+		if (possible == false) {
+			eventLog.warning("Exact change light turned on. Credit = " + credit);
+			vend.getExactChangeLight().activate();
+		}
+		else if (possible == true) {
+			eventLog.info("exact change light turned off. Credit = " + credit);
+			vend.getExactChangeLight().deactivate();
+		}
 		return possible;
 	}
 
@@ -302,6 +342,7 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 
 	}
 
+	
 	/**
 	 * Method to check whether all coin racks are full or not
 	 * 
@@ -309,15 +350,16 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 	 */
 	public boolean fullCoinRacks() {
 		// Turning on outOfOrderLight for full coinRacks
-		int i = 0;
+
 		int fullRacks = 0;
-		while (i < vend.getNumberOfCoinRacks()) {
+		for (int i = 0; i< vend.getNumberOfCoinRacks(); i++) {
 			if (vend.getCoinRack(i).hasSpace() == false) {
 				fullRacks++;
 			}
 		}
 
-		if (fullRacks == (vend.getNumberOfCoinRacks() - 1)) {
+		if (fullRacks == (vend.getNumberOfCoinRacks())) {
+			
 			return true;
 		}
 
@@ -326,6 +368,8 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 		}
 
 	}
+	
+
 
 	/**
 	 * Method to check if vending machine is completely empty
@@ -423,19 +467,22 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 							} catch (CapacityExceededException e) {
 								chuteFull(vend.getDeliveryChute());
 							} catch (DisabledException e) {
-								System.out.println("Device disabled.");
+								vend.getDisplay().display("Device disabled.");
 								outOfOrderLight(true);
 
 							} catch (EmptyException e) {
-								System.out.println("No pop in the rack.");
+								vend.getDisplay().display("No pop in the rack.");
+								eventLog.info("No pop to vend from: " + vend.getPopCanRack(i));
 							}
 						}
 					} else
-						System.out.println("Not enough credit.");
+						vend.getDisplay().display("Not enough credit");
+						eventLog.info("Not enough credit was entered for selection");
 				} else if (vend.getPopCanRack(i).size() <= 0)
-					System.out.println("No pops of this type to dispense");
+					vend.getDisplay().display("No pops of this type to dispense");
+					eventLog.info("No pops of type: " + vend.getPopCanRack(i));
 			} else if (i == vend.getNumberOfSelectionButtons() - 1)
-				System.out.println("Invalid button selected.");
+				eventLog.warning("Invalid button selected");
 		}
 
 		outOfOrderLight(machineEmpty()); 
