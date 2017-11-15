@@ -176,10 +176,12 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 	}
 
 
+
 	/**
 	 * Setter for the credit
 	 */
 	private void setCredit(int newCredit) {
+
 		credit = newCredit;
 	}
 
@@ -211,6 +213,7 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 		return possible;
 	}
 
+  
 	/**
 	 * Method to provide change after pop has been vended
 	 * 
@@ -257,8 +260,8 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 					;
 
 				}
-
-				else if ((changeDue / typeCoin) < 1) {
+        
+				else  {
 					j--;
 				}
 
