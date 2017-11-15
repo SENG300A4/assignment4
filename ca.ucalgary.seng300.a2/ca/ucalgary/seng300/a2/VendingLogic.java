@@ -175,11 +175,13 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 		return credit;
 	}
 
-	//TODO 
+
+
 	/**
 	 * Setter for the credit
 	 */
-	public void setCredit(int newCredit) {
+	private void setCredit(int newCredit) {
+
 		credit = newCredit;
 	}
 
@@ -211,7 +213,7 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 		return possible;
 	}
 
-	//TODO @return vs void
+  
 	/**
 	 * Method to provide change after pop has been vended
 	 * 
@@ -220,7 +222,6 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 	 *            purchased, and the amount which should be returned to the
 	 *            customer. If exact change is not possible, as much of this
 	 *            credit as possible is returned without going over.
-	 * @return Remaining credit (should be zero if exact change is returned)
 	 * 
 	 */
 	public void provideChange(int changeDue) {
@@ -259,7 +260,7 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 					;
 
 				}
-
+        
 				else  {
 					j--;
 				}
