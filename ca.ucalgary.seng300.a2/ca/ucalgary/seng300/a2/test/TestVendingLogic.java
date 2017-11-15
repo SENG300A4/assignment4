@@ -314,19 +314,6 @@ public class TestVendingLogic {
 		assertEquals(num_nickels, vendingMachine.getCoinRackForCoinKind(5).size());
 	}
 
-	/**
-	 * Tests if Exact Change light is off when racks full, on when one or more
-	 * racks is empty
-	 */
-	@Test
-	public void testChangeLight() {
-		assertFalse(vendingMachine.getExactChangeLight().isActive());
-
-		vendingLogic.provideChange(1000);
-		assertFalse(vendingMachine.getExactChangeLight().isActive());
-		vendingLogic.provideChange(1000);
-		assertTrue(vendingMachine.getExactChangeLight().isActive());
-	}
 
 	/**
 	 * Tests the machineEmpty method
@@ -383,6 +370,7 @@ public class TestVendingLogic {
 		} catch (DisabledException e) {
 			System.out.println("Coin Slot disabled.");
 		}
+		vendingLogic.exactChangeLight(vendingLogic.exactChangePossible());
 		assertTrue(vendingMachine.getExactChangeLight().isActive());
 	}
 }
