@@ -310,15 +310,16 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 	 */
 	public boolean fullCoinRacks() {
 		// Turning on outOfOrderLight for full coinRacks
-		int i = 0;
+
 		int fullRacks = 0;
-		while (i < vend.getNumberOfCoinRacks()) {
+		for (int i = 0; i< vend.getNumberOfCoinRacks(); i++) {
 			if (vend.getCoinRack(i).hasSpace() == false) {
 				fullRacks++;
 			}
 		}
 
-		if (fullRacks == (vend.getNumberOfCoinRacks() - 1)) {
+		if (fullRacks == (vend.getNumberOfCoinRacks())) {
+			
 			return true;
 		}
 

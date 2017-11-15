@@ -154,6 +154,25 @@ public class TestVendingLogic {
 		}
 	}
 
+	/**
+	 * Tests if out of order light turns on when coin racks are full
+	 */
+	
+	@Test
+	public void testCoinRacksFull() {
+		
+		assertFalse(vendingLogic.fullCoinRacks());
+		
+		int [] coinLoading = new int [vendingMachine.getNumberOfCoinRacks()];
+		for (int i = 0; i < coinLoading.length; i++) {
+			coinLoading[i] = coinRackCapacity-10;
+		}
+		this.vendingMachine.loadCoins(coinLoading);
+		assertTrue(vendingLogic.fullCoinRacks());
+		
+		
+	}
+
 	 
 
 	//***EMILIE'S NOTES (Remove later)*********************
