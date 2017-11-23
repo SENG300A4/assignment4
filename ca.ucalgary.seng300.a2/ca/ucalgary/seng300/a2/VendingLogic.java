@@ -18,6 +18,9 @@ import org.lsmr.vending.hardware.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Scanner;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.logging.FileHandler;
@@ -35,7 +38,7 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 	private String displayMessage;
 	private Logger eventLog = Logger.getLogger("Event-Log");
 	private FileHandler fh;
-	private boolean changeLight = false;
+	private int tenderType = 1; // Defaults to cash. 1 = Cash, 2 = Debit, 3 = Credit
 
 	/**
 	 * The main constructor. Will register itself as listener for all relevant
@@ -59,7 +62,7 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 		credit = 0;
 		coordinateDisplay();
 		outOfOrderLight(machineEmpty());
-		exactChangeLight(exactChangePossible());
+		exactChangeLight(true);
 	}
 
 	/**
@@ -91,6 +94,7 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 	 */
 	private void displayNoCredit() {
 		eventLog.info("No Credit, display welcome message");
+
 		vend.getDisplay().display("Hi there!");
 	}
 
@@ -100,6 +104,7 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 	 */
 	private void displayWithCredit() {
 		eventLog.info("Credit displayed, current credit: " + credit);
+
 		vend.getDisplay().display("Credit: " + credit);
 	}
 
@@ -148,7 +153,6 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 	@Override
 	public void validCoinInserted(CoinSlot slot, Coin coin) {
 		credit += coin.getValue();
-		exactChangeLight(exactChangePossible());
 		coordinateDisplay();
 		eventLog.info("valid: " + coin.getValue() + " coin entered");
 	}
@@ -158,6 +162,7 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 	 */
 	@Override
 	public void coinRejected(CoinSlot slot, Coin coin) {
+		// TODO Auto-generated method stub
 		eventLog.info("Coin rejected");
 	}
 
@@ -178,90 +183,93 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 	/**
 	 * Setter for the credit
 	 */
-	public void setCredit(int newCredit) {
-		credit = newCredit;
-	}
+	private void setCredit(int newCredit) {
 
-	/**
-	 * Getter for the change light
-	 */
-	public boolean getChangeLight() {
-		return changeLight;
+		credit = newCredit;
 	}
 	
 	/**
-	 * Setter for the change light
+	 * Getter for the tender type
 	 */
-	public void setChangeLight(boolean light) {
-		changeLight = light;
+	public int getTenderType() {
+		return tenderType;
+	}
+
+
+
+	/**
+	 * Setter for the credit
+	 */
+	public void setTenderType(int newTender) {
+		tenderType = newTender;
 	}
 
 	/**
 	 * Method to check if exact change is possible
 	 * Assumes that Canadian coins are used for the vending machine
 	 * 
-	 * @return possible - boolean saying whether or not exact change is possible
+	 * @return - boolean saying whether or not exact change is possible
 	 */
-	public boolean exactChangePossible() {
-		//Need 5 booleans to see if each type of pop can be purchased
-		boolean possible0 = true;
-		boolean possible1 = true;
-		boolean possible2 = true;
-		boolean possible3 = true;
-		boolean possible4 = true;
-		//Also need the remaining credit after a purchase of each kind
-		int remainingCredit0 = credit - vend.getPopKindCost(0);
-		int remainingCredit1 = credit - vend.getPopKindCost(1);
-		int remainingCredit2 = credit - vend.getPopKindCost(2);
-		int remainingCredit3 = credit - vend.getPopKindCost(3);
-		int remainingCredit4 = credit - vend.getPopKindCost(4);
+	public boolean exactChangePossible(){
 		//Determine how many total coins are in the racks
 		int totalCoins = 0;
 		for (int i = 0; i < vend.getNumberOfCoinRacks(); i++)
 			totalCoins += vend.getCoinRack(i).size();
-		//Set up an array containing all coins in the vending machine's rack
-		int [] allCoins = new int [totalCoins];
-		//Fill the array with the value of each coin
-		//Also determine the maximum change that can be returned
-		int counter = 0;
-		for (int i = 0; i < vend.getNumberOfCoinRacks(); i++) {
-				for (int j = 0; j < vend.getCoinRack(i).size(); j++) {
-					allCoins[counter] = vend.getCoinKindForCoinRack(i);
+		//Need a boolean to see if each type of pop can be purchased
+		boolean possible = true;
+		int remainingCredit = 0;
+		outerloop: for (int i = vend.getNumberOfPopCanRacks() - 1; i >= 0; i--) {
+			int counter = 0;
+			//Set up dummy coin racks to make calculations without affecting real racks
+			CoinRack[] fakeRacks = new CoinRack[vend.getNumberOfCoinRacks()];
+			Map<Integer, CoinChannel> coinRackChannels = new HashMap<Integer, CoinChannel>();
+			int [] coinTypes = new int[] {5, 10, 25, 100, 200};
+			for(int k = 0; k < vend.getNumberOfCoinRacks(); k++) {
+			    fakeRacks[k] = new CoinRack(15);
+			    fakeRacks[k].connect(new CoinChannel(vend.getCoinReturn()));
+			    coinRackChannels.put(new Integer(coinTypes[k]), new CoinChannel(fakeRacks[k]));
+			}
+			//Need the remaining credit after a purchase of each kind
+			remainingCredit = credit - vend.getPopKindCost(i);
+			int totalCoinsCounter = 0;
+			loop: while (remainingCredit > 0) {
+				for (int j = vend.getNumberOfCoinRacks() - 1; j >= 0; j--) {
+					if (remainingCredit >= vend.getCoinKindForCoinRack(j) && fakeRacks[j].size() != 0) {
+						remainingCredit -= vend.getCoinKindForCoinRack(j);
+						try {
+							fakeRacks[j].releaseCoin();
+						} catch (CapacityExceededException e) {
+						} catch (EmptyException e) {
+						} catch (DisabledException e) {
+						}
+						if (counter == fakeRacks[j].size()) {
+							break loop;
+						}
+					}
 					counter++;
+					totalCoinsCounter++;
+					if (totalCoinsCounter == totalCoins)
+						break outerloop;
 				}
-		}
-		//Populate all possible combinations of coins and check if they match what needs to be given back as change
-		//Used the following website for guidance on creating a powerset
-		//https://stackoverflow.com/questions/4640034/calculating-all-of-the-subsets-of-a-set-of-numbers
-		for(long i = 0; i < (1<<totalCoins); i++){
-			int sum = 0;
-		    for(int j = 0; j < totalCoins; j++){
-		        if(((i>>j) & 1) == 1){ // bit j is on
-		            sum += allCoins[j];
-		        }
-		    }
-		  //Check each possible combination against the user's remaining credit to see if exact change can be given
-		    if (remainingCredit0 == sum)
-		    	possible0 = false;
-		    if (remainingCredit1 == sum)
-		    	possible1 = false;
-		    if (remainingCredit2 == sum)
-		    	possible2 = false;
-		    if (remainingCredit3 == sum)
-		    	possible3 = false;
-		    if (remainingCredit4 == sum)
-		    	possible4 = false;
+			}
 		}
 		
-		if (possible0 == true || possible1 == true || possible2 == true || possible3 == true || possible4 == true) {
-			eventLog.warning("Exact change light turned on. Credit = " + credit);
-			messageChange(vend.getDisplay(), displayMessage, "Exact change no longer guaranteed.");
-			changeLight = true;
-			return true;
+		if (remainingCredit != 0) {
+			possible = false;
 		}
-		changeLight = false;
-		return false;
+		
+		if (possible == false) {
+			eventLog.warning("Exact change light turned on. Credit = " + credit);
+			vend.getExactChangeLight().activate();
+		}
+		else if (possible == true) {
+			eventLog.info("exact change light turned off. Credit = " + credit);
+			vend.getExactChangeLight().deactivate();
+		}
+		return possible;
 	}
+
+  
 	/**
 	 * Method to provide change after pop has been vended
 	 * 
@@ -270,7 +278,6 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 	 *            purchased, and the amount which should be returned to the
 	 *            customer. If exact change is not possible, as much of this
 	 *            credit as possible is returned without going over.
-	 * @return Remaining credit (should be zero if exact change is returned)
 	 * 
 	 */
 	public void provideChange(int changeDue) {
@@ -291,19 +298,14 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 						vend.getCoinRackForCoinKind(typeCoin).releaseCoin(); 
 						// Releases specific coin from coin rack
 						returnCoin = new Coin(typeCoin); 
-						// Coin of the type released						
+						// Coin of the type released
+						
 						eventLog.info(typeCoin + " coin returned to user");
 						vend.getCoinReturn().acceptCoin(returnCoin); 
-						// Adds coin to coin return						
-						changeDue = changeDue - typeCoin; 
-						// Reduces change to give back by amount released
+						// Adds coin to coin return
 						
-						//Reduces credit by amount of returned coin and displays the new value
-						credit -= typeCoin;
-						if (credit == 0)
-							displayNoCredit();
-						else 
-							coordinateDisplay();
+						changeDue = changeDue - typeCoin; 
+						// Reduces credit by amount released
 						
 						if ((changeDue / typeCoin) < 1) {
 							j--;
@@ -311,16 +313,24 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 					} catch (CapacityExceededException | EmptyException | DisabledException e) {
 						outOfOrderLight(true);
 					}
+					;
+
 				}
-				else if ((changeDue / typeCoin) < 1) {
+        
+				else  {
 					j--;
 				}
+
 			}
+
 		}
+
 		vend.getCoinReturn().unload(); // Simulates physical unloading
 		exactChangeLight(exactChangePossible());
+
 		eventLog.info(changeToReturn - changeDue + " returned to user");
-    setCredit(changeDue);
+
+		setCredit(changeDue);
 	}
 
 	/**
@@ -335,17 +345,20 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 
 	public void exactChangeLight(boolean status) {
 		if (status == false) {
-			eventLog.info("exact change light disabled");
-			vend.getExactChangeLight().deactivate();
+			eventLog.info("exact change light enabled");
+
+			vend.getExactChangeLight().activate();
 		}
 
 		else if (status == true) {
-			eventLog.info("exact change light enabled");
-			vend.getExactChangeLight().activate();
+			eventLog.info("exact change light disabled");
+
+			vend.getExactChangeLight().deactivate();
 		}
 
 	}
 
+	
 	/**
 	 * Method to check whether all coin racks are full or not
 	 * 
@@ -353,14 +366,16 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 	 */
 	public boolean fullCoinRacks() {
 		// Turning on outOfOrderLight for full coinRacks
+
 		int fullRacks = 0;
-		for (int i = 0; i < vend.getNumberOfCoinRacks(); i++) {
+		for (int i = 0; i< vend.getNumberOfCoinRacks(); i++) {
 			if (vend.getCoinRack(i).hasSpace() == false) {
 				fullRacks++;
 			}
 		}
 
 		if (fullRacks == (vend.getNumberOfCoinRacks())) {
+			
 			return true;
 		}
 
@@ -369,6 +384,8 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 		}
 
 	}
+	
+
 
 	/**
 	 * Method to check if vending machine is completely empty
@@ -409,11 +426,13 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 
 		if (status == true) {
 			eventLog.info("out of order light activated");
+
 			vend.getOutOfOrderLight().activate();
 		}
 
 		else if (status == false) {
 			eventLog.info("out of order light deactivated");
+
 			vend.getOutOfOrderLight().deactivate();
 		}
 
@@ -443,51 +462,178 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 	 */
 	@Override
 	public void pressed(PushButton button) {
-		for (int i = 0; i < vend.getNumberOfSelectionButtons(); i++) {
-			// Make sure the button matches one from the vending machine
-			if (button == vend.getSelectionButton(i)) {
-				// Ensure there is a pop in the rack
-				if (vend.getPopCanRack(i).size() > 0) {
-					// Ensure there is enough credit to purchase the pop
-					if (vend.getPopKindCost(i) <= credit) {
-						// Ensure there is enough space in the delivery chute
-						if (vend.getDeliveryChute().hasSpace()) {
-							try {
-								// Dispense the pop can
-								vend.getPopCanRack(i).dispensePopCan();
-								credit -= vend.getPopKindCost(i);
-								if (credit == 0)
-									displayNoCredit();
-								else 
-									coordinateDisplay();
-								provideChange(credit);
-								eventLog.info("pop vended from:" + vend.getPopCanRack(i));
-								break;
-							} catch (CapacityExceededException e) {
-								chuteFull(vend.getDeliveryChute());
-							} catch (DisabledException e) {
-								messageChange(vend.getDisplay(), displayMessage, "Device disabled.");
-								outOfOrderLight(true);
-							} catch (EmptyException e) {
-								messageChange(vend.getDisplay(), displayMessage, "No pop in the rack.");
+		//Try to dispense a pop with cash payment
+		if (tenderType == 1) {
+			for (int i = 0; i < vend.getNumberOfSelectionButtons(); i++) {
+				// Make sure the button matches one from the vending machine
+				if (button == vend.getSelectionButton(i)) {
+					// Ensure there is a pop in the rack
+					if (vend.getPopCanRack(i).size() > 0) {
+						// Ensure there is enough credit to purchase the pop
+						if (vend.getPopKindCost(i) <= credit) {
+							// Ensure there is enough space in the delivery chute
+							if (vend.getDeliveryChute().hasSpace()) {
+								try {
+									//Take payment in the form of cash
+									takePayment(1, vend.getPopKindCost(i));
+									// Dispense the pop can
+									vend.getPopCanRack(i).dispensePopCan();
+									eventLog.info("pop vended from: " + vend.getPopCanRack(i));
+									break;
+								} catch (CapacityExceededException e) {
+									chuteFull(vend.getDeliveryChute());
+								} catch (DisabledException e) {
+									vend.getDisplay().display("Device disabled.");
+									outOfOrderLight(true);
+	
+								} catch (EmptyException e) {
+									vend.getDisplay().display("No pop in the rack.");
+									eventLog.info("No pop to vend from: " + vend.getPopCanRack(i));
+								}
+							}
+						} else
+							vend.getDisplay().display("Not enough credit");
+							eventLog.info("Not enough credit was entered for selection");
+					} else if (vend.getPopCanRack(i).size() <= 0)
+						vend.getDisplay().display("No pops of this type to dispense");
+						eventLog.info("No pops of type: " + vend.getPopCanRack(i));
+				} else if (i == vend.getNumberOfSelectionButtons() - 1)
+					eventLog.warning("Invalid button selected");
+			}
+		}
+		//Try to dispense a pop with a debit/credit card payment
+		else if (tenderType == 2 || tenderType == 3) {
+			//Take input for a manually entered card (for now)
+			System.out.println("Enter a debit or credit card number");
+			Scanner scan = new Scanner(System.in);
+			int cardNumber = Integer.parseInt(scan.nextLine());
+			//Verify the card number is valid
+			if (verifyCardNumber(cardNumber)) {
+				//Take input for a manually entered PIN
+				System.out.println("Enter 4-digit PIN");
+				int pin = Integer.parseInt(scan.nextLine());
+				//Verify the PIN is valid for the given card
+				//Only one attempt at entering PIN (for now)
+				if (verifyPIN(cardNumber, pin)) {
+					//Find the appropriate selection button
+					for (int i = 0; i < vend.getNumberOfSelectionButtons(); i++) {
+						// Make sure the button matches one from the vending machine
+						if (button == vend.getSelectionButton(i)) {
+							// Ensure there is a pop in the rack
+							if (vend.getPopCanRack(i).size() > 0) {
+								// Ensure there is enough space in the delivery chute
+								if (vend.getDeliveryChute().hasSpace()) {
+									//Verify there is enough balance/credit on the card to make a purchase
+									//Payment by card needs to make the full purchase amount (for now)
+									if(verifyBalance(cardNumber, vend.getPopKindCost(i))) {
+										try {
+											takePayment(tenderType, vend.getPopKindCost(i));
+											// Dispense the pop can
+											vend.getPopCanRack(i).dispensePopCan();
+											eventLog.info("pop vended from: " + vend.getPopCanRack(i));
+											break;
+										} catch (CapacityExceededException e) {
+											chuteFull(vend.getDeliveryChute());
+										} catch (DisabledException e) {
+											vend.getDisplay().display("Device disabled.");
+											outOfOrderLight(true);
+			
+										} catch (EmptyException e) {
+											vend.getDisplay().display("No pop in the rack.");
+											eventLog.info("No pop to vend from: " + vend.getPopCanRack(i));
+										}
+									}
+								}
 							}
 						}
-					} else
-						messageChange(vend.getDisplay(), displayMessage, "Not enough credit.");
-				} else if (vend.getPopCanRack(i).size() <= 0)
-					messageChange(vend.getDisplay(), displayMessage, "No pops of this type to dispense.");
-			} else if (i == vend.getNumberOfSelectionButtons() - 1)
-				messageChange(vend.getDisplay(), displayMessage, "Invalid button selected.");
+					}
+				}
+				else {
+					vend.getDisplay().display("Invalid PIN.");
+					eventLog.warning("PIN" + pin + " for card " + cardNumber + " is invalid.");
+				}
+			}
+			else {
+				vend.getDisplay().display("Card Number not able to be verified.");
+				eventLog.warning("Card number " + cardNumber + " not recognized.");
+			}
+			//scan.close();
 		}
 		outOfOrderLight(machineEmpty()); 
 		// Check after each press if machine is empty and If empty, turn on out of order light
 	}
+
+	/**
+	 * Method to verify if a credit/debit card is valid. Only checks the card number
+	 * 
+	 * @param cardNumber
+	 * 				- The credit/debit card number to be verified
+	 *              - Must match a known card number
+	 **/
+	private boolean verifyCardNumber(int cardNumber) {
+		//Need to change this for real functionality once we know how to obtain card numbers
+		if (cardNumber == 123) {
+			return true;
+		}
+		else if (cardNumber == 321) {
+			return true;
+		}
+		else return false;
+	}
+
+	/**
+	 * Method to verify if a PIN is valid given a card number and PIN
+	 * 
+	 * @param cardNumber
+	 * 				- The credit/debit card number to be verified
+	 * 
+	 * @param pin
+	 * 				- The PIN entered by the user
+	 *              - Must match the PIN associated with the card       
+	 **/
+	private boolean verifyPIN(int cardNumber, int pin) {
+		//Need to change this for real functionality once we know how to obtain card numbers and PINs
+				if (cardNumber == 123 && pin == 1234) {
+					return true;
+				}
+				else if (cardNumber == 321 && pin == 4321) {
+					return true;
+				}
+				else return false;	
+	}
+
+	/**
+	 * Method to verify if there is enough balance on a card to pay for a pop.
+	 * 
+	 * @param cardNumber
+	 * 				- The credit/debit card number to be verified
+	 *              - Must match a known card number
+	 *              
+	 * @param cost
+	 *              - The cost of the pop trying to be purchased
+	 **/
+	private boolean verifyBalance(int cardNumber, int cost) {
+		//Need to change functionality for this method as well
+		//Need to associate card balances/available credit with specific cards,
+		//then check the cost against the balance we grabbed from the card.
+		if (cardNumber == 123 && cost <= 100000) {
+			//This card has a constant $1000 balance for now
+			return true;
+		}
+		else if (cardNumber == 321 && cost <= 500) {
+			//This card has a $5 balance
+			return true;
+		}
+		else return false;			
+	}
+
 	/**
 	 * Required method. Logs the event that an item has been delivered to
 	 * the delivery chute
 	 */
 	@Override
 	public void itemDelivered(DeliveryChute chute) {
+		// TODO Auto-generated method stub
 		eventLog.info("Item delivered");
 	}
 
@@ -497,6 +643,7 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 	 */
 	@Override
 	public void doorOpened(DeliveryChute chute) {
+		// TODO Auto-generated method stub
 		eventLog.info("Delivery chute door opened");
 	}
 
@@ -506,16 +653,16 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 	 */
 	@Override
 	public void doorClosed(DeliveryChute chute) {
+		// TODO Auto-generated method stub
 		eventLog.info("Delivery chute door closed");
 	}
 
 	/**
-	 * Required method. Logs the event that the delivery chute is full and displays the message to user
+	 * Required method. Logs the event that the delivery chute is full
 	 */
 	@Override
 	public void chuteFull(DeliveryChute chute) {
 		eventLog.warning("Delivery chute full");
-		messageChange(vend.getDisplay(), displayMessage, "Delivery chute full.");
 	}
 
 	/**
@@ -525,7 +672,7 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 	public void setupLogger() {
 		try {
 			// This block configures the logger with handler and formatter
-			fh = new FileHandler("EventLog.txt", 20000, 1, true);
+			fh = new FileHandler("EventLogREW.txt", 20000, 1, true);
 			eventLog.addHandler(fh);
 			eventLog.setUseParentHandlers(false);
 			SimpleFormatter formatter = new SimpleFormatter();
@@ -537,6 +684,37 @@ public class VendingLogic implements CoinSlotListener, DisplayListener, PushButt
 			e.printStackTrace();
 		}
 
+	}
+	
+	/**
+	 * Method to take payment. Can add more functionality to this (Bitcoin) if required
+	 * 
+	 * @param paymentType
+	 *            - Corresponds to the available payment options.
+	 *            - 1 = Cash
+	 *            - 2 = Debit
+	 *            - 3 = Credit
+	 *            
+	 * @param cost
+	 *            - The cost of the pop
+	 * 
+	 */
+	public void takePayment(int paymentType, int cost) {
+		if (paymentType == 1) {
+			credit -= cost;
+			provideChange(credit);
+			coordinateDisplay();
+		}
+		else if (paymentType == 2) {
+			//Need to decrease the remaining balance of the debit card here (and display it)
+			vend.getDisplay().display("Payment taken successfully. Remaining balance: ");
+			eventLog.info("Debit purchase made for $" + cost);
+		}
+		else if (paymentType == 3) {
+			//Need to decrease the available credit of the credit card here (and display it)
+			vend.getDisplay().display("Payment taken successfully. Remaining balance: ");
+			eventLog.info("Credit purchase made for $" + cost);
+		}
 	}
 
 } // end class
